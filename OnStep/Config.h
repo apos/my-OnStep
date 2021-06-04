@@ -133,9 +133,9 @@
 #define AXIS1_DRIVER_REVERSE          OFF //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
 #define AXIS1_DRIVER_STATUS           ON // TMC_SPI //    OFF, ON Enables polling for driver status info/fault detection.               Option
 
-#define AXIS1_LIMIT_MIN              -180 //   -180, n. Where n= -90..-270 (degrees.) Minimum "Hour Angle" for Eq modes.      Adjust
+#define AXIS1_LIMIT_MIN              -90 //   -180, n. Where n= -90..-270 (degrees.) Minimum "Hour Angle" for Eq modes.      Adjust
                                           //         n. Where n=-180..-360 (degrees.) Minimum Azimuth for AltAzm mode.
-#define AXIS1_LIMIT_MAX               180 //    180, n. Where n=  90.. 270 (degrees.) Maximum "Hour Angle" for Eq modes.      Adjust
+#define AXIS1_LIMIT_MAX               90 //    180, n. Where n=  90.. 270 (degrees.) Maximum "Hour Angle" for Eq modes.      Adjust
                                           //         n. Where n= 180.. 360 (degrees.) Maximum Azimuth for AltAzm mode.
 
 // AXIS2 DEC/ALT
