@@ -1,0 +1,45 @@
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Visual studio
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.d
+*.elf
+*.hex
+*.buildinfo
+*.bin
+*.sln
+*.user
+*.filters
+*.vcxproj
+*.vsarduino.h
+*.vmps.xml
+*.suo
+*.log
+*.db
+*.db-shm
+*.db-wal
+*.json
+*.sqlite
+*.config
+*.bak
+
+# SVN folders
+.svn
