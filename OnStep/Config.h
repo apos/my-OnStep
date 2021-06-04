@@ -93,8 +93,8 @@
 #define SLEW_RATE_BASE_DESIRED        1.8 //    1.0, n. Desired slew rate in deg/sec. Adjustable at run-time from            <-Req'd
                                           //         1/2 to 2x this rate, and as MCU performace considerations require.
 #define SLEW_RATE_MEMORY              OFF //    OFF, ON Remembers rates set across power cycles.                              Option
-#define SLEW_ACCELERATION_DIST        7.0 //    5.0, n, (degrees.) Approx. distance for acceleration (and deceleration.)      Adjust
-#define SLEW_RAPID_STOP_DIST          4.0 //    2.0, n, (degrees.) Approx. distance required to stop when a slew              Adjust
+#define SLEW_ACCELERATION_DIST        5.0 //    5.0, n, (degrees.) Approx. distance for acceleration (and deceleration.)      Adjust
+#define SLEW_RAPID_STOP_DIST          2.0 //    2.0, n, (degrees.) Approx. distance required to stop when a slew              Adjust
                                           //         is aborted or a limit is exceeded.
 
 // PIER SIDE BEHAVIOUR -------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#SYNCING
@@ -126,10 +126,10 @@
 
 #define AXIS1_DRIVER_MODEL            TMC5160_QUIET //    OFF, (See above.) Stepper driver model.                                      <-Often
 #define AXIS1_DRIVER_MICROSTEPS       32 //    OFF, n. Microstep mode when tracking.                                        <-Often
-#define AXIS1_DRIVER_MICROSTEPS_GOTO  1 //    OFF, n. Microstep mode used during gotos.                                     Option
+#define AXIS1_DRIVER_MICROSTEPS_GOTO  4 //    OFF, n. Microstep mode used during gotos.                                     Option
 #define AXIS1_DRIVER_IHOLD            OFF //    OFF, n, (mA.) Current during standstill. OFF uses IRUN/2.0                    Option
-#define AXIS1_DRIVER_IRUN             400 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
-#define AXIS1_DRIVER_IGOTO            3400 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
+#define AXIS1_DRIVER_IRUN             500 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
+#define AXIS1_DRIVER_IGOTO            3500 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
 #define AXIS1_DRIVER_REVERSE          OFF //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
 #define AXIS1_DRIVER_STATUS           ON // TMC_SPI //    OFF, ON Enables polling for driver status info/fault detection.               Option
 
@@ -145,10 +145,10 @@
 
 #define AXIS2_DRIVER_MODEL            TMC5160_QUIET //    OFF, (See above.) Stepper driver model.                                      <-Often
 #define AXIS2_DRIVER_MICROSTEPS       32 //    OFF, n. Microstep mode when tracking.                                        <-Often
-#define AXIS2_DRIVER_MICROSTEPS_GOTO  1 //    OFF, n. Microstep mode used during gotos.                                     Option
+#define AXIS2_DRIVER_MICROSTEPS_GOTO  4 //    OFF, n. Microstep mode used during gotos.                                     Option
 #define AXIS2_DRIVER_IHOLD            OFF //    OFF, n, (mA.) Current during standstill. OFF uses IRUN/2.0                    Option
-#define AXIS2_DRIVER_IRUN             400 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
-#define AXIS2_DRIVER_IGOTO            3400 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
+#define AXIS2_DRIVER_IRUN             500 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
+#define AXIS2_DRIVER_IGOTO            3500 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
 #define AXIS2_DRIVER_POWER_DOWN       ON //    OFF, ON Powers off 10sec after movement stops or 10min after last<=1x guide.  Option
 #define AXIS2_DRIVER_REVERSE          ON //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
 #define AXIS2_DRIVER_STATUS           ON // TMC_SPI //    OFF, ON Enables polling for driver status info/fault detection.               Option
