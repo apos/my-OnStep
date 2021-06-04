@@ -90,7 +90,7 @@
                                           //         Too fast motors stall/gears slam or too slow and sluggish in backlash.
 
 // SLEWING BEHAVIOUR ---------------------------------------------- see https://onstep.groups.io/g/main/wiki/6-Configuration#SLEWING
-#define SLEW_RATE_BASE_DESIRED        2.0 //    1.0, n. Desired slew rate in deg/sec. Adjustable at run-time from            <-Req'd
+#define SLEW_RATE_BASE_DESIRED        8.0 //    1.0, n. Desired slew rate in deg/sec. Adjustable at run-time from            <-Req'd
                                           //         1/2 to 2x this rate, and as MCU performace considerations require.
 #define SLEW_RATE_MEMORY              OFF //    OFF, ON Remembers rates set across power cycles.                              Option
 #define SLEW_ACCELERATION_DIST        7.0 //    5.0, n, (degrees.) Approx. distance for acceleration (and deceleration.)      Adjust
@@ -154,8 +154,8 @@
 #define AXIS2_DRIVER_STATUS           ON // TMC_SPI //    OFF, ON Enables polling for driver status info/fault detection.               Option
 #define AXIS2_TANGENT_ARM             OFF //    OFF, ON +limit range below. Set cntr w/[Reset Home] Return cntr w/[Find Home] Infreq
 
-#define AXIS2_LIMIT_MIN               -91 //    -90, n. Where n=-90..0 (degrees.) Minimum allowed declination.                Infreq
-#define AXIS2_LIMIT_MAX               91 //     90, n. Where n=0..90 (degrees.) Maximum allowed declination.                 Infreq
+#define AXIS2_LIMIT_MIN               -90 //    -90, n. Where n=-90..0 (degrees.) Minimum allowed declination.                Infreq
+#define AXIS2_LIMIT_MAX               90 //     90, n. Where n=0..90 (degrees.) Maximum allowed declination.                 Infreq
 
 // AXIS3 ROTATOR
 // see https://onstep.groups.io/g/main/wiki/6-Configuration#AXIS3
