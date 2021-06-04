@@ -1,5 +1,5 @@
 # my-OnStep
-## My private OnStep source code repo for different versions and configurations and combinations
+## My private OnStep source code repo
 
 This is only a private repository to get my things organized. For you own project refer to the original projekt site. Source Code hosted here is taken from OnStep Projekt: https://onstep.groups.io and its owner:
  
