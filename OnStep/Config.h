@@ -26,7 +26,7 @@
 #define SERIAL_A_BAUD_DEFAULT        9600 //   9600, n. Where n=9600,19200,57600,115200 (common baud rates.)                  Infreq
 #define SERIAL_B_BAUD_DEFAULT        9600 //   9600, n. See (src/HAL/) for your MCU Serial port # etc.                        Option
 #define SERIAL_B_ESP_FLASHING         OFF //    OFF, ON Upload ESP8266 WiFi firmware through SERIAL_B with :ESPFLASH# cmd.    Option
-#define SERIAL_C_BAUD_DEFAULT         OFF //    OFF, n, ON for ESP32 Bluetooth.                                               Option
+#define SERIAL_C_BAUD_DEFAULT        9600 //    OFF, n, ON for ESP32 Bluetooth.                                               Option
 #define SERIAL_C_BLUETOOTH_NAME  "OnStep" // "On..", Bluetooth device name for ESP32.                                         Option
 
 // MOUNT TYPE ----------------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration-Controller#MOUNT_TYPE
@@ -87,11 +87,11 @@
                                           //         Too fast motors stall/gears slam or too slow and sluggish in backlash.
 
 // SLEWING BEHAVIOUR ------------------------------------------ see https://onstep.groups.io/g/main/wiki/Configuration-Mount#SLEWING
-#define SLEW_RATE_BASE_DESIRED        1.8 //    1.0, n. Desired slew rate in deg/sec. Adjustable at run-time from            <-Req'd
+#define SLEW_RATE_BASE_DESIRED        2.5 //    1.0, n. Desired slew rate in deg/sec. Adjustable at run-time from            <-Req'd
                                           //         1/2 to 2x this rate, and as MCU performace considerations require.
 #define SLEW_RATE_MEMORY              OFF //    OFF, ON Remembers rates set across power cycles.                              Option
-#define SLEW_ACCELERATION_DIST        5.0 //    5.0, n, (degrees.) Approx. distance for acceleration (and deceleration.)      Adjust
-#define SLEW_RAPID_STOP_DIST          2.5 //    2.0, n, (degrees.) Approx. distance required to stop when a slew              Adjust
+#define SLEW_ACCELERATION_DIST        7.0 //    5.0, n, (degrees.) Approx. distance for acceleration (and deceleration.)      Adjust
+#define SLEW_RAPID_STOP_DIST          4.0 //    2.0, n, (degrees.) Approx. distance required to stop when a slew              Adjust
                                           //         is aborted or a limit is exceeded.
 
 // PIER SIDE BEHAVIOUR -------------------------------------- see https://onstep.groups.io/g/main/wiki/Configuration---Mount#SYNCING
@@ -129,10 +129,10 @@
 #define AXIS1_DRIVER_MICROSTEPS       32  //    OFF, n. Microstep mode when tracking.                                        <-Often
 #define AXIS1_DRIVER_MICROSTEPS_GOTO  4   //    OFF, n. Microstep mode used during gotos.                                     Option
 #define AXIS1_DRIVER_IHOLD            OFF //    OFF, n, (mA.) Current during standstill. OFF uses IRUN/2.0                    Option
-#define AXIS1_DRIVER_IRUN             500 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
-#define AXIS1_DRIVER_IGOTO           3500 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
+#define AXIS1_DRIVER_IRUN             400 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
+#define AXIS1_DRIVER_IGOTO           1800 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
 #define AXIS1_DRIVER_REVERSE          OFF //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
-#define AXIS1_DRIVER_STATUS           ON  //    OFF, TMC_SPI, HIGH, or LOW.  Polling for driver status info/fault detection.  Option
+#define AXIS1_DRIVER_STATUS      TMC_SPI  //    OFF, TMC_SPI, HIGH, or LOW.  Polling for driver status info/fault detection.  Option
 
 #define AXIS1_LIMIT_MIN              -90  //   -180, n. Where n= -90..-270 (degrees.) Minimum "Hour Angle" for Eq modes.      Adjust
                                           //         n. Where n=-180..-360 (degrees.) Minimum Azimuth for AltAzm mode.
@@ -148,11 +148,11 @@
 #define AXIS2_DRIVER_MICROSTEPS       32  //    OFF, n. Microstep mode when tracking.                                        <-Often
 #define AXIS2_DRIVER_MICROSTEPS_GOTO  4   //    OFF, n. Microstep mode used during gotos.                                     Option
 #define AXIS2_DRIVER_IHOLD            OFF //    OFF, n, (mA.) Current during standstill. OFF uses IRUN/2.0                    Option
-#define AXIS2_DRIVER_IRUN             500 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
-#define AXIS2_DRIVER_IGOTO           3500 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
+#define AXIS2_DRIVER_IRUN             400 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
+#define AXIS2_DRIVER_IGOTO           1800 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
 #define AXIS2_DRIVER_POWER_DOWN       ON  //    OFF, ON Powers off 10sec after movement stops or 10min after last<=1x guide.  Option
 #define AXIS2_DRIVER_REVERSE          ON  //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
-#define AXIS2_DRIVER_STATUS           ON  //    OFF, TMC_SPI, HIGH, or LOW.  Polling for driver status info/fault detection.  Option
+#define AXIS2_DRIVER_STATUS      TMC_SPI  //    OFF, TMC_SPI, HIGH, or LOW.  Polling for driver status info/fault detection.  Option
 #define AXIS2_TANGENT_ARM             OFF //    OFF, ON +limit range below. Set cntr w/[Reset Home] Return cntr w/[Find Home] Infreq
 
 #define AXIS2_LIMIT_MIN               -90 //    -90, n. Where n=-90..0 (degrees.) Minimum allowed declination.                Infreq
@@ -177,7 +177,7 @@
 
 // AXIS4 FOCUSER 1
 // see https://onstep.groups.io/g/main/wiki/Configuration-Rotator-and-Focusers#AXIS4
-#define FOCUSER1                      ON  //    OFF, ON to enable this focuser.                                               Option
+#define FOCUSER1                     OFF  //    OFF, ON to enable this focuser.                                               Option
 #define AXIS4_STEPS_PER_MICRON       1.0  //    0.5, n. Steps per micrometer. Figure this out by testing or other means.      Adjust
 #define AXIS4_SLEW_RATE_DESIRED       500 //    500, n, Where n=200..5000 (um/s.) Max microns/second. In DC mode, max pwr %   Adjust
 
