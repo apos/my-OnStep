@@ -37,29 +37,33 @@
 #define FirmwareDate          __DATE__
 #define FirmwareTime          __TIME__
 #define FirmwareVersionMajor  "2"
-#define FirmwareVersionMinor  "2"
-#define FirmwareVersionPatch  "e"
+#define FirmwareVersionMinor  "1"
+#define FirmwareVersionPatch  "u"
 
 #define Version FirmwareVersionMajor "." FirmwareVersionMinor FirmwareVersionPatch
 
-#include "Constants.h"
-
 // Enable debug and/or status messages to be passed to OnStep for display using its debug facilities
-// Default "DEBUG OFF", use "DEBUG ON" for background errors only, use "DEBUG VERBOSE" for all errors and status messages
-// "DEBUG REMOTE" to forward debug output to OnStep in verbose mode
-#define DEBUG     REMOTE
-#define DebugSer  Serial     // Default Serial, always 9600 baud, this is used for local debug output
-#include "Debug.h"
+// default "DEBUG OFF", use "DEBUG ON" for background errors only, use "DEBUG VERBOSE" for all errors and status messages
+#define DEBUG OFF
 
 #include <limits.h>
+
+// work around for some platform specific code
+#if !defined(ESP8266) && !defined(ESP32)
+  #define ICACHE_RAM_ATTR
+  #define FPSTR
+#endif
 #ifdef ARDUINO_ARCH_SAMD
   #include <avr/dtostrf.h>
 #endif
+#define Ser Serial1  // Default=Serial1, This is the hardware serial port where OnStep is attached
 
 #include <Ethernet.h>
 
+#include "Constants.h"
 #include "Locales.h"
 #include "Config.h"
+#define DISPLAY_RESET_CONTROLS OFF
 #if AXIS1_ENC > 0 && AXIS2_ENC > 0
   #define ENCODERS ON
 #endif
@@ -109,7 +113,6 @@ CmdServer cmdSvr;
 void handleNotFound(EthernetClient *client) {
   String message = "File Not Found\n\n";
   client->print(message);
-  VLF("File not found");
 //  server.send(404, "text/plain", message);
 }
 
@@ -129,12 +132,10 @@ void setup(void){
 #ifndef EEPROM_DISABLED
   nv.init();
 
-  if ((nv.readInt(EE_KEY_HIGH)!=8266) || (nv.readInt(EE_KEY_LOW)!=1)) {
+  if (nv.readInt(EE_KEY_HIGH) != 8266 || nv.readInt(EE_KEY_LOW) != 0) {
     nv.writeInt(EE_KEY_HIGH,8266);
-    nv.writeInt(EE_KEY_LOW,1);
-
+    nv.writeInt(EE_KEY_LOW,0);
 #if ENCODERS == ON
-    nv.writeInt(EE_ENC_AUTO_SYNC,ENC_AUTO_SYNC_DEFAULT);
     nv.writeLong(EE_ENC_A1_DIFF_TO,AXIS1_ENC_DIFF_LIMIT_TO);
     nv.writeLong(EE_ENC_A2_DIFF_TO,AXIS2_ENC_DIFF_LIMIT_TO);
     nv.writeLong(EE_ENC_RC_STA,20);     // enc short term average samples
@@ -146,17 +147,11 @@ void setup(void){
     nv.writeLong(EE_ENC_MIN_GUIDE,100); // minimum guide duration
     nv.writeLong(EE_ENC_A1_ZERO,0);     // absolute Encoder Axis1 zero
     nv.writeLong(EE_ENC_A2_ZERO,0);     // absolute Encoder Axis2 zero
-    nv.writeDouble(EE_ENC_A1_TICKS,AXIS1_ENC_TICKS_DEG);
-    nv.writeDouble(EE_ENC_A2_TICKS,AXIS2_ENC_TICKS_DEG);
-    nv.writeInt(EE_ENC_A1_REV,AXIS1_ENC_REVERSE);
-    nv.writeInt(EE_ENC_A2_REV,AXIS2_ENC_REVERSE);
 #endif
-
     nv.commit();
   }
 
 #if ENCODERS == ON
-  if (ENC_AUTO_SYNC_MEMORY == ON) encAutoSync=nv.readInt(EE_ENC_AUTO_SYNC);
   Axis1EncDiffTo=nv.readLong(EE_ENC_A1_DIFF_TO);
   Axis2EncDiffTo=nv.readLong(EE_ENC_A2_DIFF_TO);
   #if AXIS1_ENC_RATE_CONTROL == ON
@@ -170,11 +165,8 @@ void setup(void){
     Axis1EncProp=nv.readLong(EE_ENC_RC_PROP);
     Axis1EncMinGuide=nv.readLong(EE_ENC_MIN_GUIDE);
   #endif
-  Axis1EncTicksPerDeg=nv.readDouble(EE_ENC_A1_TICKS);
-  Axis2EncTicksPerDeg=nv.readDouble(EE_ENC_A2_TICKS);
-  Axis1EncRev=nv.readInt(EE_ENC_A1_REV);
-  Axis2EncRev=nv.readInt(EE_ENC_A2_REV);
 #endif
+
 #endif
 
 Again:
@@ -212,7 +204,7 @@ Again:
   }
   
   clearSerialChannel();
-
+  
   // say hello
   VF("WEM: Ethernet Addon "); V(FirmwareVersionMajor); V("."); V(FirmwareVersionMinor); VL(FirmwareVersionPatch);
   VF("WEM: MCU = "); VLF(MCU_STR);
@@ -220,9 +212,9 @@ Again:
   VF("WEM: Web Channel Timeout ms= "); VL(webTimeout);
   VF("WEM: Cmd Channel Timeout ms= "); VL(cmdTimeout);
 
-//  VF("WEM: Ethernet IP     = "); VL(ip.toString());
-//  VF("WEM: Ethernet GATEWAY= "); VL(gateway.toString());
-//  VF("WEM: Ethernet SUBNET = "); VL(subnet.toString());
+  VF("WEM: Ethernet IP     = "); VL(ip.toString());
+  VF("WEM: Ethernet GATEWAY= "); VL(gateway.toString());
+  VF("WEM: Ethernet SUBNET = "); VL(subnet.toString());
 
 #if W5500 == ON
   VLF("WEM: Resetting W5500 using pin 9");

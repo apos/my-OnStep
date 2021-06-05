@@ -138,8 +138,8 @@ void processPecGet() {
   String v;
 
   // PEC control
-  v = server.arg("pe");
-  if (v != EmptyStr) {
+  v=server.arg("pe");
+  if (v != "") {
     if (v == "pl") commandBlind(":$QZ+#"); // play
     if (v == "st") commandBlind(":$QZ-#"); // stop
     if (v == "re") commandBlind(":$QZ/#"); // record

@@ -3,6 +3,15 @@
 
 #if defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1280__) || defined(__SAM3X8E__)
 
+// The available PWM pins:
+// 13 OCR0A
+// 10 OCR2A, Dew Heater 3
+//  9 OCR2B, Dew Heater 2
+//  4 OCR4C, Tone
+// 46 OCR5A, Axis 3 Step
+// 45 OCR5B
+// 44 OCR5C
+
 // The multi-purpose pins (Aux3..Aux8 can be analog (pwm/dac) if supported)
 #define Aux0                 11     // Status LED
 #define Aux1                 29     // ESP8266 GPIO0, SPI MISO/Fault
@@ -28,12 +37,8 @@
 #ifndef OneWirePin
   #define OneWirePin       Aux4     // Default Pin for OneWire bus
 #endif
-#ifndef AddonBootModePin
-  #define AddonBootModePin Aux1     // ESP8266 GPIO0 or SPI MISO/Fault
-#endif
-#ifndef AddonResetPin
-  #define AddonResetPin    Aux2     // ESP8266 RST or SPI MISO/Fault
-#endif
+#define AddonBootModePin   Aux1     // ESP8266 GPIO0 or SPI MISO/Fault
+#define AddonResetPin      Aux2     // ESP8266 RST or SPI MISO/Fault
 
 // For software SPI
 #if PINMAP == MksGenL2 || PINMAP == MksGenL21
@@ -58,7 +63,9 @@
 // The status LED is a two wire jumper with a 10k resistor in series to limit the current to the LED
 #define LEDnegPin          Aux0     // RAMPS SERVO1 (1=GND, 2=+5, 3=LED-) (active LOW)
 #define LEDneg2Pin            6     // RAMPS SERVO2 (1=GND, 2=+5, 3=LED-) (active LOW)
-#define ReticlePin            5     // RAMPS SERVO3 (1=GND, 2=+5, 3=LED-) (active LOW)
+#ifndef ReticlePin
+  #define ReticlePin          5     // RAMPS SERVO3 (1=GND, 2=+5, 3=LED-) (active LOW)
+#endif
 
 // Pin for a piezo buzzer output on RAMPS Y-MIN
 #define TonePin               4     // RAMPS SERVO4 (1=GND, 2=+5, 3=TONE+) (active HIGH)

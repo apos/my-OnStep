@@ -3,11 +3,13 @@
 //
 // by Howard Dutton
 //
-// Copyright (C) 2012 to 2021 Howard Dutton
+// Copyright (C) 2012 to 2020 Howard Dutton
 //
 
 // -----------------------------------------------------------------------------------
 // ADVANCED GEOMETRIC ALIGN FOR EQUATORIAL MOUNTS (GOTO ASSIST)
+
+#if MOUNT_TYPE != ALTAZM
 
 // Initialize
 void TGeoAlign::init() {
@@ -77,8 +79,8 @@ CommandErrors TGeoAlign::addStar(int I, int N, double RA, double Dec) {
   mount[I-1].dec=getInstrAxis2()/Rad;
   actual[I-1].ha=haRange(LST()*15.0-RA)/Rad;
   actual[I-1].dec=Dec/Rad;
-  if (getInstrPierSide() == PIER_SIDE_WEST) { actual[I-1].side=-1; mount[I-1].side=-1; } else
-  if (getInstrPierSide() == PIER_SIDE_EAST) { actual[I-1].side=1; mount[I-1].side=1; } else { actual[I-1].side=0; mount[I-1].side=0; }
+  if (getInstrPierSide() == PierSideWest) { actual[I-1].side=-1; mount[I-1].side=-1; } else
+  if (getInstrPierSide() == PierSideEast) { actual[I-1].side=1; mount[I-1].side=1; } else { actual[I-1].side=0; mount[I-1].side=0; }
 
   // two or more stars and finished
   if ((I >= 2) && (I == N)) model(N);
@@ -284,7 +286,11 @@ void TGeoAlign::autoModel(int n) {
   }
   ohe=ohe/num; best_ohe=round(ohe*Rad*3600.0); best_ohw=best_ohe;
 
-  if (mountType == FORK) { Ff=1; Df=0; } else { Ff=0; Df=1; }
+#if MOUNT_TYPE == FORK
+  Ff=1; Df=0;
+#else
+  Ff=0; Df=1;
+#endif
 
   // only search for cone error if > 2 stars
   int Do=0; if (num > 2) Do=1;
@@ -329,7 +335,11 @@ void TGeoAlign::autoModel(int n) {
   altCor=best_pe/3600.0;
 
   tfCor=best_tf/3600.0;
-  if (mountType == FORK || mountType == ALTAZM) dfCor=best_ff/3600.0; else dfCor=best_df/3600.0;
+#if MOUNT_TYPE == FORK || MOUNT_TYPE == ALTAZM
+  dfCor=best_ff/3600.0;
+#else
+  dfCor=best_df/3600.0;
+#endif
 
   ax1Cor=best_ohw/3600.0;
   ax2Cor=best_odw/3600.0;
@@ -339,7 +349,7 @@ void TGeoAlign::autoModel(int n) {
 
 // takes the topocentric refracted coordinates and applies corrections to arrive at instrument equatorial coordinates 
 void TGeoAlign::equToInstr(double HA, double Dec, double *HA1, double *Dec1, int PierSide) {
-  double p=1.0; if (PierSide == PIER_SIDE_WEST) p=-1.0;
+  double p=1.0; if (PierSide == PierSideWest) p=-1.0;
 
   if (Dec > 90.0) Dec=90.0;
   if (Dec < -90.0) Dec=-90.0;
@@ -369,9 +379,13 @@ void TGeoAlign::equToInstr(double HA, double Dec, double *HA1, double *Dec1, int
       // misalignment due to Dec axis being perp. to RA axis
       double PDh=-pdCor*(sinDec/cosDec)*p;
   
-      // Fork flex or Axis flex
-      double DFd;
-      if (mountType == FORK) DFd=dfCor*cosHA; else DFd=-dfCor*(cosLat*cosHA+sinLat*(sinDec/cosDec));
+  #if MOUNT_TYPE == FORK
+      // Fork flex
+      double DFd=dfCor*cosHA;
+  #else
+      // Axis flex
+      double DFd=-dfCor*(cosLat*cosHA+sinLat*(sinDec/cosDec));
+  #endif
   
       // Tube flex
       double TFh=tfCor*(cosLat*sinHA*(1.0/cosDec));
@@ -400,7 +414,7 @@ void TGeoAlign::equToInstr(double HA, double Dec, double *HA1, double *Dec1, int
 
 // takes the instrument equatorial coordinates and applies corrections to arrive at topocentric refracted coordinates
 void TGeoAlign::instrToEqu(double HA, double Dec, double *HA1, double *Dec1, int PierSide) { 
-  double p=1.0; if (PierSide == PIER_SIDE_WEST) p=-1.0;
+  double p=1.0; if (PierSide == PierSideWest) p=-1.0;
   
   HA =HA +ax1Cor;
   Dec=Dec+ax2Cor*-p;
@@ -428,9 +442,13 @@ void TGeoAlign::instrToEqu(double HA, double Dec, double *HA1, double *Dec1, int
     // works on HA instead.  meridian flips affect this in HA
     double PDh=-pdCor*(sinDec/cosDec)*p;
 
-    // Fork flex or Axis flex
-    double DFd;
-    if (mountType == FORK) DFd=dfCor*cosHA; else DFd=-dfCor*(cosLat*cosHA+sinLat*(sinDec/cosDec));
+#if MOUNT_TYPE == FORK
+    // Fork flex
+    double DFd=dfCor*cosHA;
+#else
+    // Axis flex
+    double DFd=-dfCor*(cosLat*cosHA+sinLat*(sinDec/cosDec));
+#endif
 
     // Tube flex
     double TFh=tfCor*(cosLat*sinHA*(1.0/cosDec));
@@ -454,3 +472,5 @@ void TGeoAlign::instrToEqu(double HA, double Dec, double *HA1, double *Dec1, int
   if (*Dec1 > 90.0) *Dec1=90.0;
   if (*Dec1 < -90.0) *Dec1=-90.0;
 }
+
+#endif

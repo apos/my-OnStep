@@ -66,11 +66,25 @@ class nvs {
       if (dirtyW) {
         j=cache[i];        // get data from cache
         ee_write(i,j);     // store in EEPROM
+        #ifdef NV_VALIDATE
+          uint8_t k;
+          ee_read(i,&k);
+          if (j!=k) {
+            //Serial.print("Write addr "); Serial.print(i); Serial.print(" value "); Serial.print(j); Serial.println(" FAILED");
+            //Serial.println("Restarting Wire");
+            HAL_Wire.end();
+            HAL_Wire.begin();
+            HAL_Wire.setClock(HAL_WIRE_CLOCK);
+            ee_write(i,j);
+            //ee_read(i,&k);
+            //if (j!=k) Serial.println("Second attempt FAILED"); else Serial.println("Second attempt SUCCESS");
+          }
+        #endif
         bitWrite(cacheWriteState[i/8],i%8,0); // clean
       } else {
         // read data as required
         if (dirtyR) {
-          ee_read(i,&j,1); // get data from EEPROM
+          ee_read(i,&j); // get data from EEPROM
           cache[i]=j;      // store in cache
           bitWrite(cacheReadState[i/8],i%8,0); // clean
         }
@@ -93,7 +107,7 @@ class nvs {
       int dirty=bitRead(cacheReadState[i/8],i%8);
       if (dirty) {
         uint8_t j;
-        ee_read(i,&j,1);
+        ee_read(i,&j);
         
         // store and mark as clean
         cache[i]=j;
@@ -225,8 +239,7 @@ private:
     nextOpMs=millis()+EEPROM_WRITE_WAIT;
   }
 
-  void ee_read(int offset, byte *data, byte count) {
-    *data = 0;
+  void ee_read(int offset, byte *data) {
     while (!ee_ready()) {}
     
     HAL_Wire.beginTransmission(_eeprom_addr);
@@ -234,10 +247,9 @@ private:
     HAL_Wire.write(LSB(offset));
     HAL_Wire.endTransmission();
 
-    HAL_Wire.requestFrom(_eeprom_addr, (uint8_t)count);
-    while (HAL_Wire.available()) {
-      *data = HAL_Wire.read(); data++;
-      count--; if (count == 0) break;
+    HAL_Wire.requestFrom(_eeprom_addr, (uint8_t)1);
+    if (HAL_Wire.available()) {
+      *data = HAL_Wire.read();
     }
   }
 };

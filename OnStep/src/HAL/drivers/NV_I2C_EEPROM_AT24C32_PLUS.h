@@ -237,7 +237,6 @@ private:
   }
 
   void ee_read(int offset, byte *data, byte count) {
-    *data = 0;
     while (!ee_ready()) {}
 
     HAL_Wire.beginTransmission(_eeprom_addr);

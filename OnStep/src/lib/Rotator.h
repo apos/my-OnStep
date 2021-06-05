@@ -94,6 +94,7 @@ class rotator {
       if (pda) { pinMode(enPin,OUTPUT); disableDriver(); currentlyDisabled=true; }
     }
 
+#if MOUNT_TYPE == ALTAZM
     // enable/disable the derotator
     void enableDR(bool state) {
       DR=state;
@@ -103,6 +104,7 @@ class rotator {
     void setPA(double h, double d) {
       target.part.m=(long)(ParallacticAngle(h,d)*(double)spd); target.part.f=0;
     }
+#endif
 
     // reverse the direction of rotation
     void reverseDR() {
@@ -209,6 +211,7 @@ class rotator {
       if (((long)target.part.m < smin) || ((long)target.part.m > smax)) { DR=false; delta.fixed=0; deltaDR.fixed=0; }
     }
 
+#if MOUNT_TYPE == ALTAZM
     // calculate new derotation rate if needed
     void derotate(double h, double d) {
       if (DR) {
@@ -217,6 +220,7 @@ class rotator {
         deltaDR.fixed=doubleToFixed(pr/100.0);  // in steps per 1/100 second
       }
     }
+#endif
     
     void follow(bool mountSlewing) {
       if (!movementAllowed()) return;
@@ -281,6 +285,7 @@ class rotator {
       digitalWrite(enPin,disableState);
     }
 
+#if MOUNT_TYPE == ALTAZM
     // returns parallactic angle in degrees
     double ParallacticAngle(double HA, double Dec) {
       return atan2(sin(HA/Rad),cos(Dec/Rad)*tan(latitude/Rad)-sin(Dec/Rad)*cos(HA/Rad))*Rad;
@@ -300,6 +305,7 @@ class rotator {
       return (0.25*(x*cos(HA*Rad)-sin2H*sin(Dec*Rad))/(x*x+sin2H))/60.0;
     */
     }
+#endif
 
     // parameters
     int stepPin=-1;

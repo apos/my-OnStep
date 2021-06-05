@@ -131,7 +131,7 @@ const char html_controlRotate1[] PROGMEM =
 "<button class='bbh' style='height: 2.1em' onpointerdown=\"gf('rh')\" title='" L_HINT_ROT_FIND_HOME "' type='button'>" ARROW_DR HOME_CH "</button>"
 "<button class='bbh' style='height: 2.1em' onpointerdown=\"if (confirm('" L_ARE_YOU_SURE "?')) gf('rH')\" title='" L_HINT_ROT_RESET_HOME "' type='button'>" CAUTION_CH HOME_CH "</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 const char html_controlRotate2[] PROGMEM =
-"<button class='bbh' style='height: 2.1em' onpointerdown=\"gf('rB')\" onpointerup=\"g('rq')\" type='button'>" ARROW_LL "</button>"
+"<button class='bbh' style='height: 2.1em' onpointerdown=\"gf('rR')\" onpointerup=\"g('rq')\" type='button'>" ARROW_LL "</button>"
 "<button class='bbh' style='width: 2em' onpointerdown=\"gf('rr')\" onpointerup=\"g('rq')\" type='button'>" ARROW_L "</button>";
 const char html_controlRotate3[] PROGMEM =
 "<button class='bbh' style='width: 2em' onpointerdown=\"gf('rf')\" onpointerup=\"g('rq')\" type='button'>" ARROW_R "</button>"
@@ -438,8 +438,8 @@ void processControlGet() {
   int i;
 
   // Quick bar
-  v = server.arg("qb");
-  if (v != EmptyStr) {
+  v=server.arg("qb");
+  if (v!="") {
     if (v=="q") commandBlind(":Q#");       // stop goto/guide
     if (v=="co") commandBool(":SX99,1#");  // meridian flip, pause->continue
     if (v=="hf") commandBlind(":hF#");     // home, reset
@@ -449,8 +449,8 @@ void processControlGet() {
   }
 
   // Align
-  v = server.arg("al");
-  if (v != EmptyStr) {
+  v=server.arg("al");
+  if (v!="") {
     if (v=="1") commandBool(":A1#");
     if (v=="2") commandBool(":A2#");
     if (v=="3") commandBool(":A3#");
@@ -465,16 +465,16 @@ void processControlGet() {
   }
 
   // Set DATE/TIME
-  v = server.arg("dm");
-  if (v != EmptyStr) {
+  v=server.arg("dm");
+  if (v!="") {
     if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=11))) { get_temp_month=i+1; }
   }
-  v = server.arg("dd");
-  if (v != EmptyStr) {
+  v=server.arg("dd");
+  if (v!="") {
     if ( (atoi2((char *)v.c_str(),&i)) && ((i>=1) && (i<=31))) { get_temp_day=i; }
   }
-  v = server.arg("dy");
-  if (v != EmptyStr) {
+  v=server.arg("dy");
+  if (v!="") {
     if ( (atoi2((char *)v.c_str(),&i)) && ((i>=2016) && (i<=9999))) {
       get_temp_year=i-2000;
       char temp[16];
@@ -482,16 +482,16 @@ void processControlGet() {
       commandBool(temp);
     }
   }
-  v = server.arg("th");
-  if (v != EmptyStr) {
+  v=server.arg("th");
+  if (v!="") {
     if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=23))) { get_temp_hour=i; }
   }
-  v = server.arg("tm");
-  if (v != EmptyStr) {
+  v=server.arg("tm");
+  if (v!="") {
     if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=59))) { get_temp_minute=i; }
   }
-  v = server.arg("ts");
-  if (v != EmptyStr) {
+  v=server.arg("ts");
+  if (v!="") {
     if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=59))) {
       get_temp_second=i;
       char temp[16];
@@ -500,8 +500,8 @@ void processControlGet() {
     }
   }
 
-  v = server.arg("dr");
-  if (v != EmptyStr) {
+  v=server.arg("dr");
+  if (v!="") {
     // Tracking control
     if (v=="T1") commandBool(":Te#");     // enable tracking
     if (v=="T0") commandBool(":Td#");     // disable tracking
@@ -554,7 +554,7 @@ void processControlGet() {
     if (v=="Fq") commandBlind(":FQ#");
    
     // Rotate/De-Rotate
-    if (v=="rB") commandBlind(":r3#:rc#:r<#"); // rate 3, move ccw
+    if (v=="rR") commandBlind(":r3#:rc#:r<#"); // rate 3, move ccw
     if (v=="rr") commandBlind(":r1#:rc#:r<#"); // rate 1, move ccw
     if (v=="rf") commandBlind(":r1#:rc#:r>#"); // rate 1, move cw
     if (v=="rF") commandBlind(":r3#:rc#:r>#"); // rate 3, move cw
@@ -567,8 +567,8 @@ void processControlGet() {
     if (v=="rq") commandBlind(":rQ#");
   }
   // refine polar align
-  v = server.arg("rp");
-  if (v != EmptyStr) {
+  v=server.arg("rp");
+  if (v!="") {
     if (v=="a") commandBool(":MP#");
   }
 

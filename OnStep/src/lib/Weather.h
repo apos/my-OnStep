@@ -178,6 +178,10 @@ class weather {
   #endif
   // follow any I2C device in-library init with a reset of the I2C bus speed
   #if WEATHER == BME280 || WEATHER == BME280_0x76 || WEATHER == BMP280_0x76 || WEATHER == BMP280
+    #ifdef HAL_WIRE_RESET_AFTER_CONNECT
+      HAL_Wire.end();
+      HAL_Wire.begin();
+    #endif
     HAL_Wire.setClock(HAL_WIRE_CLOCK);
   #endif
 #endif
@@ -199,28 +203,28 @@ class weather {
     #if (FEATURE1_PIN & DS_MASK) == DS2413 || (FEATURE2_PIN & DS_MASK) == DS2413
           if (phase%2 == 1 && (_last_ds2413_state[1] != _this_ds2413_state[1] || _last_ds2413_state[0] != _this_ds2413_state[0])) {
             if (DS2413GPIO.setStateByAddress(_DS2413_address[0],_this_ds2413_state[1],_this_ds2413_state[0],true)) { phase++; _last_ds2413_state[1] = _this_ds2413_state[1]; _last_ds2413_state[0] = _this_ds2413_state[0]; }
-            if (!DS2413GPIO.success()) { _ds2413_failures[0]++; /* VLF("WRN, DS2413 comms: features 1/2"); */ }
+            if (!DS2413GPIO.success()) { _ds2413_failures[0]++; VLF("WRN, DS2413 comms: features 1/2"); }
             return;
           }
     #endif
     #if (FEATURE3_PIN & DS_MASK) == DS2413 || (FEATURE4_PIN & DS_MASK) == DS2413
           if (phase%2 == 1 && (_last_ds2413_state[3] != _this_ds2413_state[3] || _last_ds2413_state[2] != _this_ds2413_state[2])) {
             if (DS2413GPIO.setStateByAddress(_DS2413_address[1],_this_ds2413_state[3],_this_ds2413_state[2],true)) { phase++; _last_ds2413_state[3] = _this_ds2413_state[3]; _last_ds2413_state[2] = _this_ds2413_state[2]; }
-            if (!DS2413GPIO.success()) { _ds2413_failures[1]++; /* VLF("WRN, DS2413 comms: features 3/4"); */ }
+            if (!DS2413GPIO.success()) { _ds2413_failures[1]++; VLF("WRN, DS2413 comms: features 3/4"); }
             return;
           }
     #endif
     #if (FEATURE5_PIN & DS_MASK) == DS2413 || (FEATURE6_PIN & DS_MASK) == DS2413
           if (phase%2 == 1 && (_last_ds2413_state[5] != _this_ds2413_state[5] || _last_ds2413_state[4] != _this_ds2413_state[4])) {
             if (DS2413GPIO.setStateByAddress(_DS2413_address[2],_this_ds2413_state[5],_this_ds2413_state[4],true)) { phase++; _last_ds2413_state[5] = _this_ds2413_state[5]; _last_ds2413_state[4] = _this_ds2413_state[4]; }
-            if (!DS2413GPIO.success()) { _ds2413_failures[2]++; /* VLF("WRN, DS2413 comms: features 5/6"); */ }
+            if (!DS2413GPIO.success()) { _ds2413_failures[2]++; VLF("WRN, DS2413 comms: features 5/6"); }
             return;
           }
     #endif
     #if (FEATURE7_PIN & DS_MASK) == DS2413 || (FEATURE8_PIN & DS_MASK) == DS2413
           if (phase%2 == 1 && (_last_ds2413_state[7] != _this_ds2413_state[7] || _last_ds2413_state[6] != _this_ds2413_state[6])) {
             if (DS2413GPIO.setStateByAddress(_DS2413_address[3],_this_ds2413_state[7],_this_ds2413_state[6],true)) { phase++; _last_ds2413_state[7] = _this_ds2413_state[7]; _last_ds2413_state[6] = _this_ds2413_state[6]; }
-            if (!DS2413GPIO.success()) { _ds2413_failures[3]++; /* VLF("WRN, DS2413 comms: features 7/8"); */ } // If your compile fails you need to update the DS2413 library: https://github.com/hjd1964/Arduino-DS2413GPIO-Control-Library
+            if (!DS2413GPIO.success()) { _ds2413_failures[3]++; VLF("WRN, DS2413 comms: features 7/8"); } // If your compile fails you need to update the DS2413 library: https://github.com/hjd1964/Arduino-DS2413GPIO-Control-Library
             return;
           }
     #endif
@@ -297,11 +301,11 @@ class weather {
         if (isnan(_t)) {
           if (taNanCount < 15) {
             taNanCount++;
-//          VLF("WRN, misc. comms: ambient temp");
+            VLF("WRN, misc. comms: ambient temp");
           } else {
             _ta=NAN;
             firstTSample=true;
-            VLF("WRN, misc. isnan: ambient temp reset");
+            VLF("WRN, misc. isnan: ambient temp disabled");
           }
         } else { taNanCount=0; _ta=(_ta*9.0+_t)/10.0; }
 
@@ -311,11 +315,11 @@ class weather {
         if (isnan(_tt)) {
           if (ttNanCount < 15) {
             ttNanCount++;
-//          VLF("WRN, DS1820 comms: telescope");
+            VLF("WRN, DS1820 comms: telescope");
           } else {
             _tta=NAN;
             firstTTSample=true;
-            VLF("WRN, DS1820 isnan: telescope reset");
+            VLF("WRN, DS1820 isnan: telescope disabled");
           }
         } else { ttNanCount=0; _tta=(_tta*9.0+_tt)/10.0; }
  
@@ -352,11 +356,11 @@ class weather {
           if (isnan(_dh_t[i])) {
             if (ftNanCount[i] < 15) {
               ftNanCount[i]++;
-//            VF("WRN, DS1820 comms: feature "); VL(i+1);
+              VF("WRN, DS1820 comms: feature "); VL(i+1);
             } else {
               _dh_ta[i]=NAN;
               firstFTSample[i]=true;
-//            VF("WRN, DS1820 isnan: feature "); V(i+1); VLF(" reset");
+              VF("WRN, DS1820 isnan: feature "); V(i+1); VLF(" disabled");
             }
           } else { ftNanCount[i]=0; _dh_ta[i]=(_dh_ta[i]+_dh_t[i])/2.0; }
 
@@ -375,9 +379,9 @@ class weather {
           }
           if (_ds2413_failures[i] > 2) {
             _ds2413_failures[i]=0;
-//          VF("WRN, DS2413 epm>2: features ");
-//          if (i == 0) VF("1/2"); if (i == 1) VF("3/4"); if (i == 2) VF("5/6"); if (i == 3) VF("7/8");
-//          VLF(" disabled");
+            VF("WRN, DS2413 epm>2: features ");
+            if (i == 0) VF("1/2"); if (i == 1) VF("3/4"); if (i == 2) VF("5/6"); if (i == 3) VF("7/8");
+            VLF(" disabled");
           }
         }
       }

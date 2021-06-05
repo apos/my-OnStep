@@ -39,14 +39,12 @@
 
 // firmware info, these are returned by the ":GV?#" commands
 #define FirmwareDate          __DATE__
-#define FirmwareVersionMajor  5
-#define FirmwareVersionMinor  1       // minor version 0 to 99
-#define FirmwareVersionPatch  "v"     // for example major.minor patch: 1.3c
-#define FirmwareVersionConfig 4       // internal, for tracking configuration file changes
+#define FirmwareVersionMajor  4
+#define FirmwareVersionMinor  24      // minor version 0 to 99
+#define FirmwareVersionPatch  "e"     // for example major.minor patch: 1.3c
+#define FirmwareVersionConfig 3       // internal, for tracking configuration file changes
 #define FirmwareName          "On-Step"
 #define FirmwareTime          __TIME__
-
-#warning "The master branch is for developers/testing and most would do well to use the latest release instead... or in lieu of that, any beta branch that might exist."
 
 #include "Constants.h"
 
@@ -110,22 +108,6 @@
 #include "src/lib/TLS.h"
 #include "src/lib/Weather.h"
 weather ambient;
-
-#if HOME_SENSE != OFF
-  #include "src/lib/DigitalAnalogInput.h"
-  DigitalAnalogInput axis1HomeSense;
-  DigitalAnalogInput axis2HomeSense;
-#endif
-
-#if LIMIT_SENSE != OFF
-  #include "src/lib/DigitalAnalogInput.h"
-  DigitalAnalogInput limitSense;
-#endif
-
-#if PEC_SENSE != OFF
-  #include "src/lib/DigitalAnalogInput.h"
-  DigitalAnalogInput pecSense;
-#endif
 
 #if SERIAL_B_ESP_FLASHING == ON || defined(AddonTriggerPin)
   #include "src/lib/flashAddon.h"
@@ -328,7 +310,8 @@ void setup() {
  
   // tracking autostart
 #if TRACK_AUTOSTART == ON
-  if (mountType != ALTAZM) {
+  #if MOUNT_TYPE != ALTAZM
+
     // tailor behavior depending on TLS presence
     if (!tls.active) {
       VLF("MSG: Tracking autostart - TLS/orientation unknown, limits disabled");
@@ -349,9 +332,9 @@ void setup() {
     // start tracking
     trackingState=TrackingSidereal;
     enableStepperDrivers();
-  } else {
-    VLF("MSG: Tracking autostart - ignored for MOUNT_TYPE ALTAZM");
-  }
+  #else
+    #warning "Tracking autostart ignored for MOUNT_TYPE ALTAZM"
+  #endif
 #else
   if (parkStatus == Parked) {
     VLF("MSG: Restoring parked telescope pointing state");
@@ -440,17 +423,16 @@ void setup() {
 
 void loop() {
   loop2();
-  // GTA compute pointing model, this will call loop2() during extended processing
-  if (mountType == ALTAZM) AlignH.model(0); else AlignE.model(0);
+  Align.model(0); // GTA compute pointing model, this will call loop2() during extended processing
 }
 
 void loop2() {
-  // GUIDING
+  // GUIDING -------------------------------------------------------------------------------------------
   ST4();
   if ((trackingState != TrackingMoveTo) && (parkStatus == NotParked)) guide();
 
 #if HOME_SENSE != OFF
-  // AUTOMATIC HOMING
+  // AUTOMATIC HOMING ----------------------------------------------------------------------------------
   checkHome();
 #endif
 
@@ -476,13 +458,14 @@ void loop2() {
 #endif
 
     // SIDEREAL TRACKING DURING GOTOS
+    // keeps the target where it's supposed to be while doing gotos
     if (trackingState == TrackingMoveTo) {
       moveTo();
       if (lastTrackingState == TrackingSidereal) {
         origTargetAxis1.fixed+=fstepAxis1.fixed;
         origTargetAxis2.fixed+=fstepAxis2.fixed;
         // don't advance the target during meridian flips or sync
-        if (getInstrPierSide() == PIER_SIDE_EAST || getInstrPierSide() == PIER_SIDE_WEST) {
+        if (getInstrPierSide() == PierSideEast || getInstrPierSide() == PierSideWest) {
           cli();
           targetAxis1.fixed+=fstepAxis1.fixed;
           targetAxis2.fixed+=fstepAxis2.fixed;
@@ -504,21 +487,31 @@ void loop2() {
 
     // CALCULATE SOME TRACKING RATES, ETC.
     if (lstNow%3 == 0) doFastAltCalc(false);
-    if (mountType == ALTAZM) {
-      if (lstNow%3 != 0) doHorRateCalc(); // Alt/Azm rates
-    } else {
-      if (rateCompensation != RC_NONE && lstNow%3 != 0) doRefractionRateCalc(); 
-    }
+#if MOUNT_TYPE == ALTAZM
+    // figure out the current Alt/Azm tracking rates
+    if (lstNow%3 != 0) doHorRateCalc();
+#else
+    // figure out the current refraction compensated tracking rate
+    if (rateCompensation != RC_NONE && lstNow%3 != 0) doRefractionRateCalc();
+#endif
 
     // SAFETY CHECKS
 #if LIMIT_SENSE != OFF
-    if (limitSense.read() == LIMIT_SENSE_STATE) {
-      generalError=ERR_LIMIT_SENSE;
-      stopSlewingAndTracking(SS_LIMIT);
-    } 
+    // support for limit switch(es)
+    byte limit_1st = digitalRead(LimitPin);
+    if (limit_1st == LIMIT_SENSE_STATE) {
+      // Wait for a short while, then read again
+      delayMicroseconds(50);
+      byte limit_2nd = digitalRead(LimitPin);
+      if (limit_2nd == LIMIT_SENSE_STATE) {
+        // It is still low, there must be a problem
+        generalError=ERR_LIMIT_SENSE;
+        stopSlewingAndTracking(SS_LIMIT);
+      } 
+    }
 #endif
 
-    // check for fault, stop any slew or guide, and turn tracking off
+    // check for fault signal, stop any slew or guide and turn tracking off
 #if AXIS1_DRIVER_STATUS == LOW || AXIS1_DRIVER_STATUS == HIGH
     faultAxis1=(digitalRead(Axis1_FAULT) == AXIS1_DRIVER_STATUS);
 #elif AXIS1_DRIVER_STATUS == TMC_SPI
@@ -534,16 +527,16 @@ void loop2() {
 
     if (safetyLimitsOn) {
       // check altitude overhead limit and horizon limit
-      if (currentAlt < minAlt) { generalError=ERR_ALT_MIN; stopSlewingAndTracking((mountType == ALTAZM)?SS_LIMIT_AXIS2_MIN:SS_LIMIT); }
-      if (currentAlt > maxAlt) { generalError=ERR_ALT_MAX; stopSlewingAndTracking((mountType == ALTAZM)?SS_LIMIT_AXIS2_MAX:SS_LIMIT); }
+      if (currentAlt < minAlt) { generalError=ERR_ALT_MIN; stopSlewingAndTracking((MOUNT_TYPE == ALTAZM)?SS_LIMIT_AXIS2_MIN:SS_LIMIT); }
+      if (currentAlt > maxAlt) { generalError=ERR_ALT_MAX; stopSlewingAndTracking((MOUNT_TYPE == ALTAZM)?SS_LIMIT_AXIS2_MAX:SS_LIMIT); }
     }
 
     // OPTION TO POWER DOWN AXIS2 IF NOT MOVING
-#if AXIS2_DRIVER_POWER_DOWN == ON
-    if (mountType != ALTAZM) autoPowerDownAxis2();
+#if AXIS2_DRIVER_POWER_DOWN == ON && MOUNT_TYPE != ALTAZM
+    autoPowerDownAxis2();
 #endif
 
-    // 1/100S POLLING ----------------------------------------------------------------------------------
+    // 0.01S POLLING -------------------------------------------------------------------------------------
 #if TIME_LOCATION_SOURCE == GPS
     if ((PPS_SENSE == OFF || ppsSynced) && !tls.active && tls.poll()) {
       SerialGPS.end();
@@ -625,12 +618,10 @@ void loop2() {
   if ((long)(tempMs-housekeepingTimer) > 1000L) {
     housekeepingTimer=tempMs;
 
-#if ROTATOR == ON
-    if (mountType == ALTAZM) {
-      // calculate and set the derotation rate as required
-      double h,d; getApproxEqu(&h,&d,true);
-      if (trackingState == TrackingSidereal) rot.derotate(h,d);
-    }
+#if ROTATOR == ON && MOUNT_TYPE == ALTAZM
+    // calculate and set the derotation rate as required
+    double h,d; getApproxEqu(&h,&d,true);
+    if (trackingState == TrackingSidereal) rot.derotate(h,d);
 #endif
 
     // adjust tracking rate for Alt/Azm mounts
@@ -641,6 +632,7 @@ void loop2() {
     if (trackingState != TrackingNone) atHome=false;
 
 #if PPS_SENSE != OFF
+    // update clock via PPS
     cli();
     ppsRateRatio=((double)1000000.0/(double)(ppsAvgMicroS));
     if ((long)(micros()-(ppsLastMicroS+2000000UL)) > 0) ppsSynced=false; // if more than two seconds has ellapsed without a pulse we've lost sync
@@ -667,16 +659,16 @@ void loop2() {
   #endif
 #endif
 
-    // SAFETY CHECKS
+    // SAFETY CHECKS -------------------------------------------------------------------------------------
     // keeps mount from tracking past the meridian limit, past the AXIS1_LIMIT_MAX, or past the Dec limits
     if (safetyLimitsOn) {
       // check for exceeding AXIS1_LIMIT_MIN or AXIS1_LIMIT_MAX
-      if (getInstrAxis1() < axis1Settings.min) { generalError=(mountType==ALTAZM)?ERR_AZM:ERR_UNDER_POLE; stopSlewingAndTracking(SS_LIMIT_AXIS1_MIN); } else
-      if (getInstrAxis1() > axis1Settings.max) { generalError=(mountType==ALTAZM)?ERR_AZM:ERR_UNDER_POLE; stopSlewingAndTracking(SS_LIMIT_AXIS1_MAX); } else
+      if (getInstrAxis1() < axis1Settings.min) { generalError=(MOUNT_TYPE==ALTAZM)?ERR_AZM:ERR_UNDER_POLE; stopSlewingAndTracking(SS_LIMIT_AXIS1_MIN); } else
+      if (getInstrAxis1() > axis1Settings.max) { generalError=(MOUNT_TYPE==ALTAZM)?ERR_AZM:ERR_UNDER_POLE; stopSlewingAndTracking(SS_LIMIT_AXIS1_MAX); } else
       // check for exceeding Meridian Limits
       if (meridianFlip != MeridianFlipNever) {
-        if (getInstrPierSide() == PIER_SIDE_WEST) {
-          if (getInstrAxis1() > degreesPastMeridianW && (!(autoMeridianFlip && goToHere(PIER_SIDE_EAST) == CE_NONE))) { generalError=ERR_MERIDIAN; stopSlewingAndTracking(SS_LIMIT_AXIS1_MAX); }
+        if (getInstrPierSide() == PierSideWest) {
+          if (getInstrAxis1() > degreesPastMeridianW && (!(autoMeridianFlip && goToHere(true) == CE_NONE))) { generalError=ERR_MERIDIAN; stopSlewingAndTracking(SS_LIMIT_AXIS1_MAX); }
         } else
         if (getInstrAxis1() < -degreesPastMeridianE) { generalError=ERR_MERIDIAN; stopSlewingAndTracking(SS_LIMIT_AXIS1_MIN); }
       }
@@ -706,22 +698,22 @@ void stopSlewingAndTracking(StopSlewActions ss) {
   if (trackingState == TrackingMoveTo) {
     if (!abortGoto) {
       abortGoto=StartAbortGoto;
-      VF("MSG: Goto aborted, code "); VL(ss);
+      VLF("MSG: Goto aborted");
     }
   } else {
     if (spiralGuide) stopGuideSpiral();
     if (ss == SS_ALL_FAST || ss == SS_LIMIT_HARD) { stopGuideAxis1(); stopGuideAxis2(); } else
     if (ss == SS_LIMIT_AXIS1_MIN) {
-      if (guideDirAxis1 == 'e' ) stopGuideAxis1();
+      if (guideDirAxis1 == 'e' ) guideDirAxis1='b';
     } else
     if (ss == SS_LIMIT_AXIS1_MAX) {
-      if (guideDirAxis1 == 'w' ) stopGuideAxis1();
+      if (guideDirAxis1 == 'w' ) guideDirAxis1='b';
     } else
     if (ss == SS_LIMIT_AXIS2_MIN) {
-      if (getInstrPierSide() == PIER_SIDE_WEST) { if (guideDirAxis2 == 'n' ) stopGuideAxis2(); } else if (guideDirAxis2 == 's' ) stopGuideAxis2();
+      if (getInstrPierSide() == PierSideWest) { if (guideDirAxis2 == 'n' ) guideDirAxis2='b'; } else if (guideDirAxis2 == 's' ) guideDirAxis2='b';
     } else
     if (ss == SS_LIMIT_AXIS2_MAX) {
-      if (getInstrPierSide() == PIER_SIDE_WEST) { if (guideDirAxis2 == 's' ) stopGuideAxis2(); } else if (guideDirAxis2 == 'n' ) stopGuideAxis2();
+      if (getInstrPierSide() == PierSideWest) { if (guideDirAxis2 == 's' ) guideDirAxis2='b'; } else if (guideDirAxis2 == 'n' ) guideDirAxis2='b';
     }
     if (trackingState != TrackingNone) {
       if (ss != SS_ALL_FAST) {

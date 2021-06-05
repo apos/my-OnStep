@@ -52,10 +52,11 @@
 // Arduino CNC Sheild on WeMos D2 R32 (ESP32)
 #define CNC3                        52 // Similar features to MaxESP3
 
-// Khalid and Dave's PCB for STM32 Blue pill (STM32F303CC)
+// Khalid and Dave's PCB for STM32 Blue pill
 #define STM32Blue                   60
+#define STM32Black                  61
 
-#define PINMAP_LAST                 60
+#define PINMAP_LAST                 61
 // ---------------------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------------------
                                    
@@ -115,14 +116,15 @@
 #define DS_MASK    0x3F00000000000000
 #define DS18S20    0x1000000000000000
 
-// various auxilary features
-#define AUXILARY_FIRST              1
+// various auxillary features
+#define AUXILLARY_FIRST             1
 #define SWITCH                      1
 #define ANALOG_OUTPUT               2
 #define ANALOG_OUT                  2
 #define DEW_HEATER                  3
 #define INTERVALOMETER              4
-#define AUXILARY_LAST               4
+#define SWITCH_UNPARKED             5
+#define AUXILLARY_LAST              5
 
 // coordinate mode for getting and setting RA/Dec
 #define OBSERVED_PLACE              1
@@ -135,10 +137,6 @@
 #define BD_IN -1
 #define BD_OUT 1
 
-// signal stability time, in ms
-#define SST_SWITCH                  10
-#define SST_EMI_RFI                 1
-
 // EEPROM Info ---------------------------------------------------------------------------------------------------------------------
 // General purpose storage A (100 bytes), 0..99
 
@@ -150,9 +148,7 @@
                                     
 #define EE_currentSite              11  // 1
                                     
-#define EE_pauseHome                12  // 1
-
-#define EE_mountType                13  // 1
+#define EE_pauseHome                12  // 1 + 1
                                     
 #define EE_LMT                      14  // 4
 #define EE_JD                       18  // 4
@@ -269,7 +265,8 @@
 #define EE_focBacklashPos               8  // 2
 #define EE_focBacklash                  10 // 2
 #define EE_focDcPwr                     12 // 1
-#define EE_tcfCoef                      13 // 4 (1)
+#define EE_tcfCoef                      13 // 4
+#define EE_tcfEn                        17 // 1
 #define EE_tcfDeadband                  18 // 2
 #define EE_tcfT0                        20 // 4
 
@@ -285,13 +282,13 @@
 // Unique identifier for the current initialization format for NV, do not change
 #define NV_INIT_KEY 915307551
 
-#define PIER_SIDE_NONE                 0
-#define PIER_SIDE_EAST                 1
-#define PIER_SIDE_WEST                 2
-#define PIER_SIDE_BEST                 3
-#define PIER_SIDE_WE1                 10
-#define PIER_SIDE_WE2                 11
-#define PIER_SIDE_WE3                 12
-#define PIER_SIDE_EW1                 20
-#define PIER_SIDE_EW2                 21
-#define PIER_SIDE_EW3                 22
+#define PierSideNone               0
+#define PierSideEast               1
+#define PierSideWest               2
+#define PierSideBest               3
+#define PierSideFlipWE1            10
+#define PierSideFlipWE2            11
+#define PierSideFlipWE3            12
+#define PierSideFlipEW1            20
+#define PierSideFlipEW2            21
+#define PierSideFlipEW3            22

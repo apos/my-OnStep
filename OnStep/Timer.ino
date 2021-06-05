@@ -446,7 +446,7 @@ double getFrequencyHzAxis2() {
     return (16000000.0/(double)isrTimerRateAxis2)*(double)timerDirAxis2;
 }
 
-#if AXIS2_DRIVER_POWER_DOWN == ON
+#if AXIS2_DRIVER_POWER_DOWN == ON && MOUNT_TYPE != ALTAZM
   // Auto power down the Dec motor
   void autoPowerDownAxis2() {
     static long Axis2PowerOffTimer = 0;

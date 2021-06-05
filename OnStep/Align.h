@@ -11,6 +11,8 @@
 // -----------------------------------------------------------------------------------
 // ADVANCED GEOMETRIC ALIGN FOR ALT/AZM MOUNTS (GOTO ASSIST)
 
+#if MOUNT_TYPE == ALTAZM
+
 typedef struct {
   double ha;
   double dec;
@@ -66,10 +68,19 @@ class TGeoAlignH
     void do_search(double sf, int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9);
 };
 
-TGeoAlignH AlignH;
+TGeoAlignH Align;
+#endif
 
 // -----------------------------------------------------------------------------------
 // ADVANCED GEOMETRIC ALIGN FOR EQUATORIAL MOUNTS (GOTO ASSIST)
+
+#if MOUNT_TYPE != ALTAZM
+
+typedef struct {
+  double ha;
+  double dec;
+  int side;
+} align_coord2_t;
 
 class TGeoAlign
 {
@@ -118,7 +129,8 @@ class TGeoAlign
     void do_search(double sf, int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9);
 };
 
-TGeoAlign AlignE;
+TGeoAlign Align;
+#endif
 
 byte alignNumStars = 0;
 byte alignThisStar = 0;
@@ -134,8 +146,7 @@ CommandErrors alignStar() {
   if ((alignNumStars == alignThisStar) && (meridianFlip == MeridianFlipAlign)) meridianFlip=MeridianFlipNever;
 
   if (alignThisStar <= alignNumStars) {
-    CommandErrors e;
-    if (mountType == ALTAZM) e=AlignH.addStar(alignThisStar,alignNumStars,newTargetRA,newTargetDec); else e=AlignE.addStar(alignThisStar,alignNumStars,newTargetRA,newTargetDec);
+    CommandErrors e=Align.addStar(alignThisStar,alignNumStars,newTargetRA,newTargetDec);
     if (e == CE_NONE) alignThisStar++; else return e;
   } else return CE_PARAM_RANGE;
 

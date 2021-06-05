@@ -248,13 +248,9 @@ double jd2last(double JulianDay, double ut1, bool updateRTC) {
     // UT to local time
     double lmt=ut1-timeZone;
 
-#ifdef RTC_SKEW_IN_SECONDS
-    lmt+=RTC_SKEW_IN_SECONDS/3600.0;
-#endif
-
     // correct for day moving forward/backward... this works for multipule days of up-time
     double J=JulianDay;
-    while (lmt >= 24.0) { lmt=lmt-24.0; J=J-1.0; }
+    while (lmt >= 24.0) { lmt=lmt-24.0; J=J-1.0; } 
     if    (lmt < 0.0)   { lmt=lmt+24.0; J=J+1.0; }
 
     // set the RTC
@@ -325,33 +321,41 @@ void setLatitude(double Lat) {
   sinLat=sin(latitude/Rad);
   latitudeAbs=fabs(latitude);
   if (latitude >= 0) latitudeSign=1; else latitudeSign=-1;
-  if (latitude >= 0 || mountType == ALTAZM) {
+  if (latitude >= 0) {
     if (axis1Settings.reverse == ON) defaultDirAxis1 = DefaultDirAxis1SCPInit; else defaultDirAxis1 = DefaultDirAxis1NCPInit;
   } else {
     if (axis1Settings.reverse == ON) defaultDirAxis1 = DefaultDirAxis1NCPInit; else defaultDirAxis1 = DefaultDirAxis1SCPInit;
   }
 
-  // Declination home position changes sign with n/s hemisphere for Eq mounts
-  if (mountType != ALTAZM) {
-    if (latitude < 0) homePositionAxis2=-fabs(homePositionAxis2); else homePositionAxis2=fabs(homePositionAxis2);
-  }
+  // the polar home position
+#if MOUNT_TYPE == ALTAZM
+  homePositionAxis2=AXIS2_HOME_DEFAULT;
+#else
+  if (latitude < 0) homePositionAxis2=-AXIS2_HOME_DEFAULT; else homePositionAxis2=AXIS2_HOME_DEFAULT;
+#endif
 }
 
 // convert equatorial coordinates to horizon
+// this takes approx. 1.4mS on a 16MHz Mega2560
 void equToHor(double HA, double Dec, double *Alt, double *Azm) {
-  HA =HA/Rad;
-  Dec=Dec/Rad;
-  double cosHA=cos(HA);
+  HA = HA/Rad;
+  Dec = Dec/Rad;
+  double cosHA = cos(HA);
   double SinAlt = (sin(Dec) * sinLat) + (cos(Dec) * cosLat * cosHA);  
-  *Alt   = asin(SinAlt);
+  *Alt = asin(SinAlt);
   double t1=sin(HA);
-  double t2=cosHA*sinLat-tan(Dec)*cosLat;
-  *Azm=atan2(t1,t2)*Rad;
-  *Azm=*Azm+180.0;
-  *Alt=*Alt*Rad;
+  // handle degenerate coordinates within 0.1 arc-sec of the poles
+  if (abs(Dec - 90.0/Rad) < 4.848e-7) *Azm = 0.0; else
+  if (abs(Dec + 90.0/Rad) < 4.848e-7) *Azm = 180.0; else {
+    double t2 = cosHA*sinLat - tan(Dec)*cosLat;
+    *Azm = atan2(t1, t2)*Rad;
+    *Azm = *Azm + 180.0;
+  }
+  *Alt = *Alt*Rad;
 }
-      
+
 // convert horizon coordinates to equatorial
+// this takes approx. 1.4mS
 void horToEqu(double Alt, double Azm, double *HA, double *Dec) { 
   Alt  = Alt/Rad;
   Azm  = Azm/Rad;
@@ -451,23 +455,21 @@ void setDeltaTrackingRate() {
 
   if (trackingSyncInProgress()) {
     trackingSyncSeconds--;
-
-    double d1,d2,newTargetAlt,newTargetAzm;
-    if (mountType == ALTAZM) {
-      double a,z;
-      getHor(&a,&z);
-      double newTargetHA=haRange(LST()*15.0-newTargetRA);
-      equToHor(newTargetHA,newTargetDec,&newTargetAlt,&newTargetAzm);
-      d1=-(z-newTargetAzm);
-      d2=-(a-newTargetAlt);
-    } else {
-      double r,d;
-      getEqu(&r,&d,false);
-      d1=r-newTargetRA;
-      d2=d-newTargetDec;
-      if (getInstrPierSide() == PIER_SIDE_EAST) d2=-d2;
-    }
-
+    
+  #if MOUNT_TYPE == ALTAZM
+    double a,z,d1,d2,newTargetAlt,newTargetAzm;
+    getHor(&a,&z);
+    double newTargetHA=haRange(LST()*15.0-newTargetRA);
+    equToHor(newTargetHA,newTargetDec,&newTargetAlt,&newTargetAzm);
+    d1=-(z-newTargetAzm);
+    d2=-(a-newTargetAlt);
+  #else
+    double r,d,d1,d2;
+    getEqu(&r,&d,false);
+    d1=r-newTargetRA;
+    d2=d-newTargetDec;
+    if (getInstrPierSide() == PierSideEast) d2=-d2;
+  #endif
     if ((fabs(d1) < arcSecPerStepAxis1/3600.0) && (fabs(d2) < arcSecPerStepAxis2/3600.0)) {
       trackingSyncSeconds=0;
     } else {
@@ -478,16 +480,14 @@ void setDeltaTrackingRate() {
     }
   }
 
-  if (mountType != ALTAZM) {
-    if ((rateCompensation != RC_REFR_BOTH) && (rateCompensation != RC_FULL_BOTH)) _deltaAxis2=0.0;
-  }
-
-  // trackingTimerRateAxis1/2 are x the sidereal rate
+#if MOUNT_TYPE != ALTAZM
+  if ((rateCompensation != RC_REFR_BOTH) && (rateCompensation != RC_FULL_BOTH)) _deltaAxis2=0.0;
+#endif
   cli();
+  // trackingTimerRateAxis1/2 are x the sidereal rate
   if (trackingState == TrackingSidereal) trackingTimerRateAxis1=(_deltaAxis1/15.0)+f1; else trackingTimerRateAxis1=0.0;
   if (trackingState == TrackingSidereal) trackingTimerRateAxis2=(_deltaAxis2/15.0)+f2; else trackingTimerRateAxis2=0.0;
   sei();
-
   fstepAxis1.fixed=doubleToFixed( ((axis1Settings.stepsPerMeasure/240.0)*(_deltaAxis1/15.0))/100.0 );
   fstepAxis2.fixed=doubleToFixed( ((axis2Settings.stepsPerMeasure/240.0)*(_deltaAxis2/15.0))/100.0 );
 }
@@ -495,21 +495,21 @@ void setDeltaTrackingRate() {
 double _currentRate=1.0;
 void setTrackingRate(double r) {
   _currentRate=r;
-  if (mountType != ALTAZM) {
-    _deltaAxis1=r*15.0;
-    _deltaAxis2=0.0;
-  }
+#if MOUNT_TYPE != ALTAZM
+  _deltaAxis1=r*15.0;
+  _deltaAxis2=0.0;
+#endif
 }
 
 double getTrackingRate60Hz() {
   double f=0;
   // during slews, if tracking is enabled it's at the default sidereal rate
   if (trackingState == TrackingMoveTo && lastTrackingState == TrackingSidereal) f=1.00273790935*60.0;
-  if (mountType == ALTAZM) {
+#if MOUNT_TYPE == ALTAZM
     if (trackingState == TrackingSidereal) f=_currentRate*1.00273790935*60.0;
-  } else {
+#else
     if (trackingState == TrackingSidereal) { cli(); f=(trackingTimerRateAxis1*1.00273790935)*60.0; sei(); }
-  }
+#endif
   return f;
 }
 
@@ -595,11 +595,13 @@ double ztr(double a) {
   return x;
 }
 
+#if MOUNT_TYPE != ALTAZM
+
 // Distance in arc-min ahead of and behind the current Equ position, used for rate calculation
 #ifdef HAL_NO_DOUBLE_PRECISION
-  #define RefractionRateRange 30.0
+#define RefractionRateRange 30.0
 #else
-  #define RefractionRateRange 1.0
+#define RefractionRateRange 1.0
 #endif
 
 bool doRefractionRateCalc() {
@@ -631,7 +633,7 @@ bool doRefractionRateCalc() {
   // get the instrument coordinates
   if ((rr_step == 10) || (rr_step == 110)) {
     if ((rateCompensation == RC_FULL_RA) || (rateCompensation == RC_FULL_BOTH)) {
-      AlignE.equToInstr(rr_HA,rr_Dec,&rr_HA,&rr_Dec,getInstrPierSide());
+      Align.equToInstr(rr_HA,rr_Dec,&rr_HA,&rr_Dec,getInstrPierSide());
     }
   }
 
@@ -666,7 +668,7 @@ bool doRefractionRateCalc() {
       double dax1=(rr_HA1-rr_HA2)*(15.0/(RefractionRateRange/60.0))/2.0;
       if (fabs(_deltaAxis1-dax1) > 0.005) _deltaAxis1=dax1; else _deltaAxis1=(_deltaAxis1*9.0+dax1)/10.0;
       double dax2;
-      if (getInstrPierSide() == PIER_SIDE_WEST) {
+      if (getInstrPierSide() == PierSideWest) {
         dax2=(rr_Dec2-rr_Dec1)*(15.0/(RefractionRateRange/60.0))/2.0;
       } else {
         dax2=(rr_Dec1-rr_Dec2)*(15.0/(RefractionRateRange/60.0))/2.0;
@@ -689,8 +691,12 @@ bool doRefractionRateCalc() {
   return done;
 }
 
+#endif
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // AltAz tracking
+
+#if MOUNT_TYPE == ALTAZM
 
 #define AltAzTrackingRange 5  // distance in arc-min (10) ahead of and behind the current Equ position, used for rate calculation
 
@@ -779,6 +785,7 @@ bool doHorRateCalc() {
   }
   return done;
 }
+#endif
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Acceleration rate calculation
@@ -789,7 +796,7 @@ void setAccelerationRates(double maxRate) {
   slewRateX = slewRateX*((maxRateBaseActual/2.0)/(maxRate/16.0)); // scale with maxRate so SLEW_ACCELERATION_DIST and SLEW_RAPID_STOP_DIST are approximately correct
   accXPerSec = slewRateX/SLEW_ACCELERATION_DIST;
   guideRates[9]=RateToASPerSec/(maxRate/16.0); guideRates[8]=guideRates[9]/2.0;
-  activeGuideRateSelection=GR_NONE;
+  activeGuideRate=GuideRateNone;
   
   // set the new goto acceleration rate
   cli();

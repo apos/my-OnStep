@@ -3,9 +3,7 @@
 
 #pragma once
 
-#ifndef EEPROM_DISABLED
-  #include "EEPROM.h"
-#endif
+#include "EEPROM.h"
 
 class nvs {
   public:
@@ -19,7 +17,7 @@ class nvs {
     }
     
     void commit() {
-#if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ESP8266) || defined(ESP32)
       EEPROM.commit();
 #endif
     }

@@ -58,7 +58,7 @@
   #define AXIS2_LIMIT_MAX 90
 #endif
 
-#if mountType == ALTAZM
+#if MOUNT_TYPE == ALTAZM
   #if !defined(AXIS1_LIMIT_MIN) && defined(AXIS1_LIMIT_MAXAZM)
     #define AXIS1_LIMIT_MIN -AXIS1_LIMIT_MAXAZM
     #define AXIS1_LIMIT_MAX AXIS1_LIMIT_MAXAZM
@@ -127,20 +127,8 @@
 // -----------------------------------------------------------------------------------
 // setup defaults
 
-#ifndef HOME_SENSE_HYSTERSIS
-  #define HOME_SENSE_HYSTERSIS 26
-#endif
-
-#ifndef PEC_SENSE_HYSTERSIS
-  #define PEC_SENSE_HYSTERSIS 26
-#endif
-
-#ifndef LED_RETICLE_ACTIVE_STATE
-  #define LED_RETICLE_ACTIVE_STATE LOW
-#endif
-
 // enable PEC code only if we need it
-#if AXIS1_STEPS_PER_WORMROT != 0
+#if !(AXIS1_STEPS_PER_WORMROT == 0 || MOUNT_TYPE == ALTAZM)
   #define AXIS1_PEC ON
 #else
   #define AXIS1_PEC OFF
@@ -163,7 +151,7 @@
   #define AXIS3_STEP_RATE_MAX (1000.0/(AXIS3_SLEW_RATE_DESIRED*AXIS3_STEPS_PER_DEGREE))
 #endif
 #ifndef AXIS4_STEP_RATE_MAX
-  #if AXIS5_DRIVER_DC_MODE == ON
+  #if AXIS4_DRIVER_DC_MODE == ON
     #define AXIS4_STEP_RATE_MAX (1000.0/(AXIS4_SLEW_RATE_DESIRED*10.0))
   #else
     #define AXIS4_STEP_RATE_MAX (1000.0/(AXIS4_SLEW_RATE_DESIRED*AXIS4_STEPS_PER_MICRON))
@@ -350,56 +338,6 @@
   #define AXIS5_DRIVER_IRUN OFF
 #endif
 
-#ifndef FEATURE1_ACTIVE_UNPARKED
-  #define FEATURE1_ACTIVE_UNPARKED 0
-#endif
-#ifndef FEATURE2_ACTIVE_UNPARKED
-  #define FEATURE2_ACTIVE_UNPARKED 0
-#endif
-#ifndef FEATURE3_ACTIVE_UNPARKED
-  #define FEATURE3_ACTIVE_UNPARKED 0
-#endif
-#ifndef FEATURE4_ACTIVE_UNPARKED
-  #define FEATURE4_ACTIVE_UNPARKED 0
-#endif
-#ifndef FEATURE5_ACTIVE_UNPARKED
-  #define FEATURE5_ACTIVE_UNPARKED 0
-#endif
-#ifndef FEATURE6_ACTIVE_UNPARKED
-  #define FEATURE6_ACTIVE_UNPARKED 0
-#endif
-#ifndef FEATURE7_ACTIVE_UNPARKED
-  #define FEATURE7_ACTIVE_UNPARKED 0
-#endif
-#ifndef FEATURE8_ACTIVE_UNPARKED
-  #define FEATURE8_ACTIVE_UNPARKED 0
-#endif
-
-#ifndef FEATURE1_ACTIVE_GOTO
-  #define FEATURE1_ACTIVE_GOTO 0
-#endif
-#ifndef FEATURE2_ACTIVE_GOTO
-  #define FEATURE2_ACTIVE_GOTO 0
-#endif
-#ifndef FEATURE3_ACTIVE_GOTO
-  #define FEATURE3_ACTIVE_GOTO 0
-#endif
-#ifndef FEATURE4_ACTIVE_GOTO
-  #define FEATURE4_ACTIVE_GOTO 0
-#endif
-#ifndef FEATURE5_ACTIVE_GOTO
-  #define FEATURE5_ACTIVE_GOTO 0
-#endif
-#ifndef FEATURE6_ACTIVE_GOTO
-  #define FEATURE6_ACTIVE_GOTO 0
-#endif
-#ifndef FEATURE7_ACTIVE_GOTO
-  #define FEATURE7_ACTIVE_GOTO 0
-#endif
-#ifndef FEATURE8_ACTIVE_GOTO
-  #define FEATURE8_ACTIVE_GOTO 0
-#endif
-
 #ifndef FEATURE1_ACTIVE_STATE
   #define FEATURE1_ACTIVE_STATE 1
 #endif
@@ -428,8 +366,8 @@
 #if LOW != 0
   #error "Library check: OnStep assumes LOW == 0!"
 #endif
-#if HIGH != 1 || true != 1
-  #error "Library check: OnStep assumes both true and HIGH == 1!"
+#if HIGH != 1
+  #error "Library check: OnStep assumes HIGH == 1!"
 #endif
 
 // -----------------------------------------------------------------------------------
@@ -445,14 +383,14 @@
 #ifndef SERIAL_A_BAUD_DEFAULT
   #error "Configuration (Config.h): Setting SERIAL_A_BAUD_DEFAULT must be present!"
 #elif SERIAL_A_BAUD_DEFAULT != 9600 && SERIAL_A_BAUD_DEFAULT != 19200 && SERIAL_A_BAUD_DEFAULT != 38400 && SERIAL_A_BAUD_DEFAULT != 57600 && SERIAL_A_BAUD_DEFAULT != 115200 && SERIAL_B_BAUD_DEFAULT != 256000
-  #error "Configuration (Config.h): Setting SERIAL_A_BAUD_DEFAULT invalid, use 9600, 19200, 38400, 57600 or 115200 (baud.)"
+  #warning "Configuration (Config.h): Setting SERIAL_A_BAUD_DEFAULT unknown, use 9600, 19200, 38400, 57600 or 115200 (baud.)"
 #elif defined(HAL_SLOW_PROCESSOR) && SERIAL_A_BAUD_DEFAULT != OFF && SERIAL_A_BAUD_DEFAULT != 9600 && SERIAL_A_BAUD_DEFAULT != 19200
   #error "Configuration (Config.h): Setting SERIAL_A_BAUD_DEFAULT invalid for HAL_SLOW_PROCESSOR, use OFF or 9600, 19200 (baud.)"
 #endif
 #ifndef SERIAL_B_BAUD_DEFAULT
   #error "Configuration (Config.h): Setting SERIAL_B_BAUD_DEFAULT must be present!"
 #elif SERIAL_B_BAUD_DEFAULT != OFF && SERIAL_B_BAUD_DEFAULT != 9600 && SERIAL_B_BAUD_DEFAULT != 19200 && SERIAL_B_BAUD_DEFAULT != 38400 && SERIAL_B_BAUD_DEFAULT != 57600 && SERIAL_B_BAUD_DEFAULT != 115200 && SERIAL_B_BAUD_DEFAULT != 256000
-  #error "Configuration (Config.h): Setting SERIAL_B_BAUD_DEFAULT invalid, use OFF or 9600, 19200, 38400, 57600 or 115200 (baud.)"
+  #warning "Configuration (Config.h): Setting SERIAL_B_BAUD_DEFAULT unknown, use OFF or 9600, 19200, 38400, 57600 or 115200 (baud.)"
 #elif defined(HAL_SLOW_PROCESSOR) && SERIAL_B_BAUD_DEFAULT != OFF && SERIAL_B_BAUD_DEFAULT != 9600 && SERIAL_B_BAUD_DEFAULT != 19200
   #error "Configuration (Config.h): Setting SERIAL_B_BAUD_DEFAULT invalid for HAL_SLOW_PROCESSOR, use OFF or 9600, 19200 (baud.)"
 #endif
@@ -460,7 +398,7 @@
   #error "Configuration (Config.h): Setting SERIAL_C_BAUD_DEFAULT must be present!"
 #elif !defined(HAL_SERIAL_C_BLUETOOTH)
   #if SERIAL_C_BAUD_DEFAULT != OFF && SERIAL_C_BAUD_DEFAULT != 9600 && SERIAL_C_BAUD_DEFAULT != 19200 && SERIAL_C_BAUD_DEFAULT != 38400 && SERIAL_C_BAUD_DEFAULT != 57600 && SERIAL_C_BAUD_DEFAULT != 115200 && SERIAL_B_BAUD_DEFAULT != 256000
-    #error "Configuration (Config.h): Setting SERIAL_C_BAUD_DEFAULT invalid, use OFF or 9600, 19200, 38400, 57600 or 115200 (baud.)"
+    #warning "Configuration (Config.h): Setting SERIAL_C_BAUD_DEFAULT unknown, use OFF or 9600, 19200, 38400, 57600 or 115200 (baud.)"
   #elif defined(HAL_SLOW_PROCESSOR) && SERIAL_C_BAUD_DEFAULT != OFF && SERIAL_C_BAUD_DEFAULT != 9600 && SERIAL_C_BAUD_DEFAULT != 19200
     #error "Configuration (Config.h): Setting SERIAL_C_BAUD_DEFAULT invalid for HAL_SLOW_PROCESSOR, use OFF or 9600, 19200 (baud.)"
   #endif
@@ -512,14 +450,13 @@
   #ifdef SERIAL_GPS
     #define SerialGPS SERIAL_GPS
   #endif
+  #ifdef SerialGPSBaud
+    #ifndef SERIAL_GPS_BAUD
+      #define SERIAL_GPS_BAUD SerialGPSBaud
+    #endif
+  #endif
   #ifndef SerialGPS
     #error "Configuration (Config.h): Setting SERIAL_GPS, GPS requires adding a line to identify the serial port '#define SERIAL_GPS Serial6' for example."
-  #endif
-  #ifndef SERIAL_GPS
-    #define SERIAL_GPS SerialGPS
-  #endif
-  #ifdef SerialGPSBaud
-    #define SERIAL_GPS_BAUD SerialGPSBaud
   #endif
   #ifndef SERIAL_GPS_BAUD
     #warning "Configuration (Config.h): Setting SERIAL_GPS_BAUD, GPS serial port baud rate is not defined, using 4800."
@@ -551,7 +488,7 @@
 #endif
 #ifndef FEATURE1_PURPOSE
   #error "Configuration (Config.h): Setting FEATURE1_PURPOSE must be present!"
-#elif FEATURE1_PURPOSE != OFF && (FEATURE1_PURPOSE < AUXILARY_FIRST || FEATURE1_PURPOSE > AUXILARY_LAST)
+#elif FEATURE1_PURPOSE != OFF && (FEATURE1_PURPOSE < AUXILLARY_FIRST || FEATURE1_PURPOSE > AUXILLARY_LAST)
   #error "Configuration (Config.h): Setting FEATURE1_PURPOSE invalid, use OFF, SWITCH, ANALOG_OUTPUT, DEW_HEATER, etc."
 #endif
 #ifndef FEATURE1_TEMP
@@ -585,7 +522,7 @@
 #endif
 #ifndef FEATURE2_PURPOSE
   #error "Configuration (Config.h): Setting FEATURE2_PURPOSE must be present!"
-#elif FEATURE2_PURPOSE != OFF && (FEATURE2_PURPOSE < AUXILARY_FIRST || FEATURE2_PURPOSE > AUXILARY_LAST)
+#elif FEATURE2_PURPOSE != OFF && (FEATURE2_PURPOSE < AUXILLARY_FIRST || FEATURE2_PURPOSE > AUXILLARY_LAST)
   #error "Configuration (Config.h): Setting FEATURE2_PURPOSE invalid, use OFF, SWITCH, ANALOG_OUTPUT, DEW_HEATER, etc."
 #endif
 #ifndef FEATURE2_TEMP
@@ -619,7 +556,7 @@
 #endif
 #ifndef FEATURE3_PURPOSE
   #error "Configuration (Config.h): Setting FEATURE3_PURPOSE must be present!"
-#elif FEATURE3_PURPOSE != OFF && (FEATURE3_PURPOSE < AUXILARY_FIRST || FEATURE3_PURPOSE > AUXILARY_LAST)
+#elif FEATURE3_PURPOSE != OFF && (FEATURE3_PURPOSE < AUXILLARY_FIRST || FEATURE3_PURPOSE > AUXILLARY_LAST)
   #error "Configuration (Config.h): Setting FEATURE3_PURPOSE invalid, use OFF, SWITCH, ANALOG_OUTPUT, DEW_HEATER, etc."
 #endif
 #ifndef FEATURE3_TEMP
@@ -653,7 +590,7 @@
 #endif
 #ifndef FEATURE4_PURPOSE
   #error "Configuration (Config.h): Setting FEATURE4_PURPOSE must be present!"
-#elif FEATURE4_PURPOSE != OFF && (FEATURE4_PURPOSE < AUXILARY_FIRST || FEATURE4_PURPOSE > AUXILARY_LAST)
+#elif FEATURE4_PURPOSE != OFF && (FEATURE4_PURPOSE < AUXILLARY_FIRST || FEATURE4_PURPOSE > AUXILLARY_LAST)
   #error "Configuration (Config.h): Setting FEATURE4_PURPOSE invalid, use OFF, SWITCH, ANALOG_OUTPUT, DEW_HEATER, etc."
 #endif
 #ifndef FEATURE4_TEMP
@@ -687,7 +624,7 @@
 #endif
 #ifndef FEATURE5_PURPOSE
   #error "Configuration (Config.h): Setting FEATURE5_PURPOSE must be present!"
-#elif FEATURE5_PURPOSE != OFF && (FEATURE5_PURPOSE < AUXILARY_FIRST || FEATURE5_PURPOSE > AUXILARY_LAST)
+#elif FEATURE5_PURPOSE != OFF && (FEATURE5_PURPOSE < AUXILLARY_FIRST || FEATURE5_PURPOSE > AUXILLARY_LAST)
   #error "Configuration (Config.h): Setting FEATURE5_PURPOSE invalid, use OFF, SWITCH, ANALOG_OUTPUT, DEW_HEATER, etc."
 #endif
 #ifndef FEATURE5_TEMP
@@ -721,7 +658,7 @@
 #endif
 #ifndef FEATURE6_PURPOSE
   #error "Configuration (Config.h): Setting FEATURE6_PURPOSE must be present!"
-#elif FEATURE6_PURPOSE != OFF && (FEATURE6_PURPOSE < AUXILARY_FIRST || FEATURE6_PURPOSE > AUXILARY_LAST)
+#elif FEATURE6_PURPOSE != OFF && (FEATURE6_PURPOSE < AUXILLARY_FIRST || FEATURE6_PURPOSE > AUXILLARY_LAST)
   #error "Configuration (Config.h): Setting FEATURE6_PURPOSE invalid, use OFF, SWITCH, ANALOG_OUTPUT, DEW_HEATER, etc."
 #endif
 #ifndef FEATURE6_TEMP
@@ -755,7 +692,7 @@
 #endif
 #ifndef FEATURE7_PURPOSE
   #error "Configuration (Config.h): Setting FEATURE7_PURPOSE must be present!"
-#elif FEATURE7_PURPOSE != OFF && (FEATURE7_PURPOSE < AUXILARY_FIRST || FEATURE7_PURPOSE > AUXILARY_LAST)
+#elif FEATURE7_PURPOSE != OFF && (FEATURE7_PURPOSE < AUXILLARY_FIRST || FEATURE7_PURPOSE > AUXILLARY_LAST)
   #error "Configuration (Config.h): Setting FEATURE7_PURPOSE invalid, use OFF, SWITCH, ANALOG_OUTPUT, DEW_HEATER, etc."
 #endif
 #ifndef FEATURE7_TEMP
@@ -789,7 +726,7 @@
 #endif
 #ifndef FEATURE8_PURPOSE
   #error "Configuration (Config.h): Setting FEATURE8_PURPOSE must be present!"
-#elif FEATURE8_PURPOSE != OFF && (FEATURE8_PURPOSE < AUXILARY_FIRST || FEATURE8_PURPOSE > AUXILARY_LAST)
+#elif FEATURE8_PURPOSE != OFF && (FEATURE8_PURPOSE < AUXILLARY_FIRST || FEATURE8_PURPOSE > AUXILLARY_LAST)
   #error "Configuration (Config.h): Setting FEATURE8_PURPOSE invalid, use OFF, SWITCH, ANALOG_OUTPUT, DEW_HEATER, etc."
 #endif
 #ifndef FEATURE8_TEMP
@@ -851,8 +788,8 @@
 
 #ifndef HOME_SENSE
   #error "Configuration (Config.h): Setting HOME_SENSE must be present!"
-#elif HOME_SENSE != OFF && HOME_SENSE != ON && HOME_SENSE != ON_PULLUP && HOME_SENSE != ON_PULLDOWN && (HOME_SENSE < 0 || HOME_SENSE > 1023)
-  #error "Configuration (Config.h): Setting HOME_SENSE invalid, use OFF, ON, ON_PULLUP, ON_PULLDOWN, or a number between 0 and 1023 (0 to 3.3V or 0 to 5V) only."
+#elif HOME_SENSE != OFF && HOME_SENSE != ON && HOME_SENSE != ON_PULLUP && HOME_SENSE != ON_PULLDOWN
+  #error "Configuration (Config.h): Setting HOME_SENSE invalid, use OFF, ON, ON_PULLUP, or ON_PULLDOWN only."
 #endif
 
 #ifndef HOME_SENSE_STATE_AXIS1
@@ -881,7 +818,7 @@
 
 #ifndef PEC_SENSE
   #error "Configuration (Config.h): Setting PEC_SENSE must be present!"
-#elif (PEC_SENSE != OFF && PEC_SENSE != ON && PEC_SENSE != ON_PULLUP && PEC_SENSE != ON_PULLDOWN) && (PEC_SENSE < 0 || PEC_SENSE > 1023)
+#elif (PEC_SENSE != OFF && PEC_SENSE != ON && PEC_SENSE != ON_PULLUP && PEC_SENSE != ON_PULLDOWN) && PEC_SENSE < 0 && PEC_SENSE > 1023
   #error "Configuration (Config.h): Setting PEC_SENSE invalid, use OFF, ON, ON_PULLUP, ON_PULLDOWN or a number between 0 and 1023 (0 to 3.3V or 0 to 5V) only."
 #endif
 
@@ -1189,20 +1126,6 @@
   #include "src/sd_drivers/Validate.TMC_SPI.h"
   #include "src/sd_drivers/Validate.GENERIC.h"
   #include "src/sd_drivers/Validate.SERVO.h"
-
-  #if AXIS1_DRIVER_STATUS == ON
-    #error "Configuration (Config.h): AXIS1_DRIVER_STATUS; Stepper driver doesn't support the ON setting."
-  #endif
-  #if AXIS1_DRIVER_STATUS != OFF && AXIS1_DRIVER_STATUS != LOW && AXIS1_DRIVER_STATUS != HIGH && AXIS1_DRIVER_STATUS != TMC_SPI
-    #error "Configuration (Config.h): AXIS1_DRIVER_STATUS; Stepper driver unsupported setting, use OFF, ON, LOW, HIGH, TMC_SPI."
-  #endif
-
-  #if AXIS2_DRIVER_STATUS == ON
-    #error "Configuration (Config.h): AXIS2_DRIVER_STATUS; Stepper driver doesn't support the ON setting."
-  #endif
-  #if AXIS2_DRIVER_STATUS != OFF && AXIS2_DRIVER_STATUS != LOW && AXIS2_DRIVER_STATUS != HIGH && AXIS2_DRIVER_STATUS != TMC_SPI
-    #error "Configuration (Config.h): AXIS2_DRIVER_STATUS; Stepper driver unsupported setting, use OFF, ON, LOW, HIGH, TMC_SPI."
-  #endif
 
   #if AXIS1_DRIVER_DECAY_MODE_GOTO == STEALTHCHOP || AXIS2_DRIVER_DECAY_MODE_GOTO == STEALTHCHOP
     #warning "Configuration (Config.h): TMC stepper driver _VQUIET mode is generally not recommended except for situations where motor RPM is low."

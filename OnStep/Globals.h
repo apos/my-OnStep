@@ -47,14 +47,18 @@ volatile double ppsLastRateRatio        = 1.0;
 volatile bool ppsSynced              = false;
 
 // Tracking and rate control -------------------------------------------------------------------------------------------------------
-enum RateCompensation {RC_NONE, RC_REFR_RA, RC_REFR_BOTH, RC_FULL_RA, RC_FULL_BOTH};
-#if TRACK_REFRACTION_RATE_DEFAULT == ON
-  RateCompensation rateCompensation   = RC_REFR_RA;
+#if MOUNT_TYPE != ALTAZM
+  enum RateCompensation {RC_NONE, RC_REFR_RA, RC_REFR_BOTH, RC_FULL_RA, RC_FULL_BOTH};
+  #if TRACK_REFRACTION_RATE_DEFAULT == ON
+    RateCompensation rateCompensation   = RC_REFR_RA;
+  #else
+    RateCompensation rateCompensation   = RC_NONE;
+  #endif
 #else
-  RateCompensation rateCompensation   = RC_NONE;
+  enum RateCompensation {RC_NONE};
+  RateCompensation rateCompensation     = RC_NONE;
 #endif
 
-byte mountType                          = MOUNT_TYPE;
 double slewSpeed                        = 0;
 volatile long timerRateAxis1            = 0;
 volatile long timerRateBacklashAxis1    = 0;
@@ -168,14 +172,21 @@ double longitude                        = 0.0;
   #define TELESCOPE_COORDINATES TOPOCENTRIC
 #endif 
 
-double homePositionAxis1                = 0.0;
+#ifndef AXIS1_HOME_DEFAULT
+  #if MOUNT_TYPE == GEM
+    #define AXIS1_HOME_DEFAULT 90.0 
+  #else
+    #define AXIS1_HOME_DEFAULT 0.0 
+  #endif
+#endif
+double homePositionAxis1                = AXIS1_HOME_DEFAULT;
+
 volatile long posAxis1                  = 0;                 // hour angle position in steps
 volatile int blAxis1                    = 0;                 // backlash position in steps
 volatile int backlashAxis1              = 0;                 // total backlash in steps
 volatile long startAxis1                = 0;                 // hour angle of goto start position in steps
 volatile fixed_t targetAxis1;                                // hour angle of goto end   position in steps
 double origTargetRA                     = 0.0;               // holds the RA for gotos before possible conversion to observed place
-double secTargetRA;                                          // secondary, as above
 double newTargetRA                      = 0.0;               // holds the RA for gotos after conversion to observed place
 double newTargetAzm                     = 0.0;               // holds the altitude and azmiuth for slews
 fixed_t origTargetAxis1;
@@ -184,14 +195,21 @@ long   indexAxis1Steps                  = 0;
 volatile int stepAxis1=1;
 fixed_t fstepAxis1;                                          // tracking and PEC, fractional steps
 
-double homePositionAxis2                = 0.0;
+#ifndef AXIS2_HOME_DEFAULT
+  #if MOUNT_TYPE == ALTAZM
+    #define AXIS2_HOME_DEFAULT 0.0
+  #else
+    #define AXIS2_HOME_DEFAULT 90.0                          // always positive, sign is automatically adjusted for hemisphere
+  #endif
+#endif
+double homePositionAxis2                = AXIS2_HOME_DEFAULT;
+
 volatile long posAxis2                  = 0;                 // declination position in steps
 volatile int blAxis2                    = 0;                 // backlash position in steps
 volatile int backlashAxis2              = 0;                 // total backlash in steps
 volatile long startAxis2                = 0;                 // declination of goto start position in steps
 volatile fixed_t targetAxis2;                                // declination of goto end   position in steps
 double origTargetDec                    = 0.0;               // holds the Dec for gotos before possible conversion to observed place
-double secTargetDec;                                         // secondary, as above
 double newTargetDec                     = 0.0;               // holds the Dec for gotos after conversion to observed place
 double newTargetAlt                     = 0.0;               // holds the altitude and azmiuth for slews
 fixed_t origTargetAxis2;
@@ -299,10 +317,18 @@ enum StopSlewActions {SS_ALL_FAST, SS_LIMIT, SS_LIMIT_HARD, SS_LIMIT_AXIS1_MIN, 
 #define MeridianFlipNever                 0
 #define MeridianFlipAlign                 1
 #define MeridianFlipAlways                2
-byte meridianFlip = MeridianFlipNever;
+#if MOUNT_TYPE == GEM
+  byte meridianFlip = MeridianFlipAlways;
+#endif
+#if MOUNT_TYPE == FORK
+  byte meridianFlip = MeridianFlipNever;
+#endif
+#if MOUNT_TYPE == ALTAZM
+  byte meridianFlip = MeridianFlipNever;
+#endif
 
-byte pierSideControl = PIER_SIDE_NONE;
-int preferredPierSideDefault = PIER_SIDE_PREFERRED_DEFAULT;
+byte pierSideControl = PierSideNone;
+int preferredPierSide = PIER_SIDE_PREFERRED_DEFAULT;
 bool autoMeridianFlip                   = false;             // auto meridian flip/continue as tracking hits AXIS1_LIMIT_MERIDIAN_W
 bool pauseHome                          = false;             // allow pause at home?
 bool waitingHomeContinue                = false;             // set to true to stop pause
@@ -326,13 +352,11 @@ bool parkSaved                          = false;
 // Homing --------------------------------------------------------------------------------------------------------------------------
 bool atHome                             = true;
 bool homeMount                          = false;
-enum findHomeModes {FH_OFF,FH_START,FH_FAST,FH_READY_SLOW,FH_SLOW,FH_READY_TRIM,FH_TRIM,FH_DONE};
-findHomeModes findHomeMode=FH_OFF;
 
 // Command processing --------------------------------------------------------------------------------------------------------------
 #define BAUD 9600
 // serial speed
-unsigned long baudRate[10] = {115200,56700,38400,28800,19200,14400,9600,4800,2400,1200};
+unsigned long baudRate[10] = {115200,57600,38400,28800,19200,14400,9600,4800,2400,1200};
 
 // Guiding and slewing -------------------------------------------------------------------------------------------------------------
 #define RateToDegPerSec                   (1000000.0/axis1Settings.stepsPerMeasure)
@@ -344,17 +368,14 @@ double  guideRates[10]={3.75,7.5,15,30,60,120,300,720,         720,    720};
 //                      .25X .5x 1x 2x 4x  8x 20x 48x half-MaxRate MaxRate
 //                         0   1  2  3  4   5   6   7            8       9
 
-#define GR_NONE                          255
-#define GR_GUIDE                         -3
-#define GR_PULSEGUIDE                    -2
-#define GR_CUSTOM                        -1
-#define GR_1X                            2
-#ifndef GR_DEFAULT
-  #define GR_DEFAULT                     6
+#define GuideRate1x                       2
+#ifndef GuideRateDefault
+  #define GuideRateDefault                6
 #endif
-byte guideRateSelection                 = GR_DEFAULT;
-byte pulseGuideRateSelection            = GR_1X;
-volatile byte activeGuideRateSelection  = GR_NONE;
+#define GuideRateNone                     255
+byte currentGuideRate                   = GuideRateDefault;
+byte currentPulseGuideRate              = GuideRate1x;
+volatile byte activeGuideRate           = GuideRateNone;
                                         
 volatile byte guideDirAxis1             = 0;
 char          ST4DirAxis1               = 'b';
@@ -435,26 +456,23 @@ volatile int buzzerDuration = 0;
 #ifdef FEATURES_PRESENT
 typedef struct Features {
    const char* name;
-   const int16_t purpose;
+   const int purpose;
    const int64_t temp;
    const int64_t pin;
-   int16_t value;
-   uint8_t active_unparked:1;
-   uint8_t active_goto:1;
-   uint8_t active_state:1;
-
+   int value;
+   int active;
    dewHeaterControl *dewHeater;
    intervalometerControl *intervalometer;
 } features;
 
 features feature[8] = {
-  {FEATURE1_NAME,FEATURE1_PURPOSE,FEATURE1_TEMP,FEATURE1_PIN,FEATURE1_DEFAULT_VALUE,FEATURE1_ACTIVE_UNPARKED,FEATURE1_ACTIVE_GOTO,FEATURE1_ACTIVE_STATE,NULL,NULL},
-  {FEATURE2_NAME,FEATURE2_PURPOSE,FEATURE2_TEMP,FEATURE2_PIN,FEATURE2_DEFAULT_VALUE,FEATURE2_ACTIVE_UNPARKED,FEATURE2_ACTIVE_GOTO,FEATURE2_ACTIVE_STATE,NULL,NULL},
-  {FEATURE3_NAME,FEATURE3_PURPOSE,FEATURE3_TEMP,FEATURE3_PIN,FEATURE3_DEFAULT_VALUE,FEATURE3_ACTIVE_UNPARKED,FEATURE3_ACTIVE_GOTO,FEATURE3_ACTIVE_STATE,NULL,NULL},
-  {FEATURE4_NAME,FEATURE4_PURPOSE,FEATURE4_TEMP,FEATURE4_PIN,FEATURE4_DEFAULT_VALUE,FEATURE4_ACTIVE_UNPARKED,FEATURE4_ACTIVE_GOTO,FEATURE4_ACTIVE_STATE,NULL,NULL},
-  {FEATURE5_NAME,FEATURE5_PURPOSE,FEATURE5_TEMP,FEATURE5_PIN,FEATURE5_DEFAULT_VALUE,FEATURE5_ACTIVE_UNPARKED,FEATURE5_ACTIVE_GOTO,FEATURE5_ACTIVE_STATE,NULL,NULL},
-  {FEATURE6_NAME,FEATURE6_PURPOSE,FEATURE6_TEMP,FEATURE6_PIN,FEATURE6_DEFAULT_VALUE,FEATURE6_ACTIVE_UNPARKED,FEATURE6_ACTIVE_GOTO,FEATURE6_ACTIVE_STATE,NULL,NULL},
-  {FEATURE7_NAME,FEATURE7_PURPOSE,FEATURE7_TEMP,FEATURE7_PIN,FEATURE7_DEFAULT_VALUE,FEATURE7_ACTIVE_UNPARKED,FEATURE7_ACTIVE_GOTO,FEATURE7_ACTIVE_STATE,NULL,NULL},
-  {FEATURE8_NAME,FEATURE8_PURPOSE,FEATURE8_TEMP,FEATURE8_PIN,FEATURE8_DEFAULT_VALUE,FEATURE8_ACTIVE_UNPARKED,FEATURE8_ACTIVE_GOTO,FEATURE8_ACTIVE_STATE,NULL,NULL}
+  {FEATURE1_NAME,FEATURE1_PURPOSE,FEATURE1_TEMP,FEATURE1_PIN,FEATURE1_DEFAULT_VALUE,FEATURE1_ACTIVE_STATE,NULL,NULL},
+  {FEATURE2_NAME,FEATURE2_PURPOSE,FEATURE2_TEMP,FEATURE2_PIN,FEATURE2_DEFAULT_VALUE,FEATURE2_ACTIVE_STATE,NULL,NULL},
+  {FEATURE3_NAME,FEATURE3_PURPOSE,FEATURE3_TEMP,FEATURE3_PIN,FEATURE3_DEFAULT_VALUE,FEATURE3_ACTIVE_STATE,NULL,NULL},
+  {FEATURE4_NAME,FEATURE4_PURPOSE,FEATURE4_TEMP,FEATURE4_PIN,FEATURE4_DEFAULT_VALUE,FEATURE4_ACTIVE_STATE,NULL,NULL},
+  {FEATURE5_NAME,FEATURE5_PURPOSE,FEATURE5_TEMP,FEATURE5_PIN,FEATURE5_DEFAULT_VALUE,FEATURE5_ACTIVE_STATE,NULL,NULL},
+  {FEATURE6_NAME,FEATURE6_PURPOSE,FEATURE6_TEMP,FEATURE6_PIN,FEATURE6_DEFAULT_VALUE,FEATURE6_ACTIVE_STATE,NULL,NULL},
+  {FEATURE7_NAME,FEATURE7_PURPOSE,FEATURE7_TEMP,FEATURE7_PIN,FEATURE7_DEFAULT_VALUE,FEATURE7_ACTIVE_STATE,NULL,NULL},
+  {FEATURE8_NAME,FEATURE8_PURPOSE,FEATURE8_TEMP,FEATURE8_PIN,FEATURE8_DEFAULT_VALUE,FEATURE8_ACTIVE_STATE,NULL,NULL}
 };
 #endif

@@ -3,11 +3,13 @@
 //
 // by Howard Dutton
 //
-// Copyright (C) 2012 to 2021 Howard Dutton
+// Copyright (C) 2012 to 2020 Howard Dutton
 //
 
 // -----------------------------------------------------------------------------------
 // ADVANCED GEOMETRIC ALIGN FOR ALT/AZ MOUNTS (GOTO ASSIST)
+
+#if MOUNT_TYPE == ALTAZM
 
 // Initialize
 void TGeoAlignH::init() {
@@ -91,8 +93,8 @@ CommandErrors TGeoAlignH::addStar(int I, int N, double RA, double Dec) {
   actual[I-1].ha =degRange(actual[I-1].ha)/Rad;
   actual[I-1].dec=actual[I-1].dec/Rad;
 
-  if (getInstrPierSide() == PIER_SIDE_WEST) { actual[I-1].side=-1; mount[I-1].side=-1; } else
-  if (getInstrPierSide() == PIER_SIDE_EAST) { actual[I-1].side=1; mount[I-1].side=1; } else { actual[I-1].side=0; mount[I-1].side=0; }
+  if (getInstrPierSide() == PierSideWest) { actual[I-1].side=-1; mount[I-1].side=-1; } else
+  if (getInstrPierSide() == PierSideEast) { actual[I-1].side=1; mount[I-1].side=1; } else { actual[I-1].side=0; mount[I-1].side=0; }
 
   // two or more stars and finished
   if ((I >= 2) && (I == N)) model(N);
@@ -343,7 +345,11 @@ void TGeoAlignH::autoModel(int n) {
   altCor=best_pe/3600.0;
 
   tfCor=best_tf/3600.0;
-  if (mountType == FORK || mountType == ALTAZM) dfCor=best_ff/3600.0; else dfCor=best_df/3600.0;
+#if MOUNT_TYPE == FORK || MOUNT_TYPE == ALTAZM
+  dfCor=best_ff/3600.0;
+#else
+  dfCor=best_df/3600.0;
+#endif
 
   ax1Cor=best_ohw/3600.0;
   ax2Cor=best_odw/3600.0;
@@ -352,7 +358,7 @@ void TGeoAlignH::autoModel(int n) {
 }
 
 void TGeoAlignH::horToInstr(double Alt, double Azm, double *Alt1, double *Azm1, int PierSide) {
-  double p=1.0; if (PierSide == PIER_SIDE_WEST) p=-1.0;
+  double p=1.0; if (PierSide == PierSideWest) p=-1.0;
   
   double cosLat=cos(90.0/Rad); double sinLat=sin(90.0/Rad);
   
@@ -384,9 +390,13 @@ void TGeoAlignH::horToInstr(double Alt, double Azm, double *Alt1, double *Azm1, 
       // misalignment due to Alt axis being perp. to Azm axis
       double PDh=-pdCor*(sinAlt/cosAlt)*p;
   
-      // Fork or Axis flex
-      double DFd;
-      if (mountType == FORK || mountType == ALTAZM) DFd=dfCor*cosAzm; else DFd=-dfCor*(cosLat*cosAzm+sinLat*(sinAlt/cosAlt));
+  #if MOUNT_TYPE == FORK || MOUNT_TYPE == ALTAZM
+      // Fork flex
+      double DFd=dfCor*cosAzm;
+  #else
+      // Axis flex
+      double DFd=-dfCor*(cosLat*cosAzm+sinLat*(sinAlt/cosAlt));
+  #endif
   
       // Tube flex
       double TFh=tfCor*(cosLat*sinAzm*(1.0/cosAlt));
@@ -415,7 +425,7 @@ void TGeoAlignH::horToInstr(double Alt, double Azm, double *Alt1, double *Azm1, 
 
 // takes the instrument equatorial coordinates and applies corrections to arrive at topocentric refracted coordinates
 void TGeoAlignH::instrToHor(double Alt, double Azm, double *Alt1, double *Azm1, int PierSide) { 
-  double p=1.0; if (PierSide == PIER_SIDE_WEST) p=-1.0;
+  double p=1.0; if (PierSide == PierSideWest) p=-1.0;
   
   double cosLat=cos(90.0/Rad); double sinLat=sin(90.0/Rad);
   
@@ -446,9 +456,13 @@ void TGeoAlignH::instrToHor(double Alt, double Azm, double *Alt1, double *Azm1, 
     // works on Azm instead.  meridian flips affect this in Azm
     double PDh=-pdCor*(sinAlt/cosAlt)*p;
 
-    // Fork or Axis flex
-    double DFd;
-    if (mountType == FORK) DFd=dfCor*cosAzm; else DFd=-dfCor*(cosLat*cosAzm+sinLat*(sinAlt/cosAlt));
+#if MOUNT_TYPE == FORK
+    // Fork flex
+    double DFd=dfCor*cosAzm;
+#else
+    // Axis flex
+    double DFd=-dfCor*(cosLat*cosAzm+sinLat*(sinAlt/cosAlt));
+#endif
 
     // Tube flex
     double TFh=tfCor*(cosLat*sinAzm*(1.0/cosAlt));
@@ -472,3 +486,4 @@ void TGeoAlignH::instrToHor(double Alt, double Azm, double *Alt1, double *Azm1, 
   if (*Alt1 > 90.0) *Alt1=90.0;
   if (*Alt1 < -90.0) *Alt1=-90.0;
 }
+#endif

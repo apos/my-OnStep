@@ -327,8 +327,8 @@ void processSettingsGet() {
   String v;
 
   // Slew Speed
-  v = server.arg("ss");
-  if (v != EmptyStr) {
+  v=server.arg("ss");
+  if (v!="") {
     if (v=="vs") commandBool(":SX93,5#"); // very slow, 0.5 x
     if (v=="s")  commandBool(":SX93,4#"); // slow,      0.75x
     if (v=="n")  commandBool(":SX93,3#"); // normal,    1.0 x
@@ -337,20 +337,20 @@ void processSettingsGet() {
   }
 
   // set-park
-  v = server.arg("pk");
-  if (v != EmptyStr) {
+  v=server.arg("pk");
+  if (v!="") {
     if (v=="s") commandBool(":hQ#");
   }
   // Tracking control
-  v = server.arg("tk");
-  if (v != EmptyStr) {
+  v=server.arg("tk");
+  if (v!="") {
     if (v=="f")    commandBlind(":T+#"); // 0.02hz faster
     if (v=="-")    commandBlind(":T-#"); // 0.02hz slower
     if (v=="r")    commandBlind(":TR#"); // reset
   }
   // Refraction Rate Tracking control
-  v = server.arg("rr");
-  if (v != EmptyStr) {
+  v=server.arg("rr");
+  if (v!="") {
     if (v=="otk")  commandBool(":To#"); // pointing model compensated
     if (v=="on")   commandBool(":Tr#"); // compensated on
     if (v=="off")  commandBool(":Tn#"); // compensated off
@@ -358,21 +358,21 @@ void processSettingsGet() {
     if (v=="doff") commandBool(":T1#"); // compensated 1 axis
   }
   // Alert buzzer
-  v = server.arg("ab");
-  if (v != EmptyStr) {
+  v=server.arg("ab");
+  if (v!="") {
     if (v=="on")   commandBool(":SX97,1#");
     if (v=="off")  commandBool(":SX97,0#");
   }
   // Auto-continue
-  v = server.arg("ma");
-  if (v != EmptyStr) {
+  v=server.arg("ma");
+  if (v!="") {
     if (v=="now")  commandBool(":MN#");
     if (v=="on")   commandBool(":SX95,1#");
     if (v=="off")  commandBool(":SX95,0#");
   }
   // Pause at meridian flip
-  v = server.arg("mp");
-  if (v != EmptyStr) {
+  v=server.arg("mp");
+  if (v!="") {
     if (v=="on")   commandBool(":SX98,1#");
     if (v=="off")  commandBool(":SX98,0#");
   }
