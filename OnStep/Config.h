@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Configuration for OnStep
-// ONSTEP MKS-L-GEN Board Vers. 1.0 for CNC-400 and BigtreeTek TMC5160 SPI
+// ONSTEP MKS-L-GEN Board Vers. 1.0 for CNC-400 and Waterott TMC5160 SPI
 
 /*
  *          For more information on setting OnStep up see http://www.stellarjourney.com/index.php?r=site/equipment_onstep 
