@@ -131,12 +131,17 @@
 #define AXIS1_DRIVER_IRUN             400 //    OFF, n, (mA.) Current during tracking, appropriate for stepper/driver/etc.    Option
 #define AXIS1_DRIVER_IGOTO            2000 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
 #define AXIS1_DRIVER_REVERSE          OFF //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
-#define AXIS1_DRIVER_STATUS           ON // TMC_SPI //    OFF, ON Enables polling for driver status info/fault detection.               Option
+#define AXIS1_DRIVER_STATUS           TMC_SPI // TMC_SPI //    OFF, ON Enables polling for driver status info/fault detection.               Option
 
 #define AXIS1_LIMIT_MIN              -90 //   -180, n. Where n= -90..-270 (degrees.) Minimum "Hour Angle" for Eq modes.      Adjust
                                           //         n. Where n=-180..-360 (degrees.) Minimum Azimuth for AltAzm mode.
 #define AXIS1_LIMIT_MAX               90 //    180, n. Where n=  90.. 270 (degrees.) Maximum "Hour Angle" for Eq modes.      Adjust
                                           //         n. Where n= 180.. 360 (degrees.) Maximum Azimuth for AltAzm mode.
+#define AXIS1_LIMIT_UNDER_POLE        180 //   150 to 180 (degrees), For GEM and FORK mounts only this is the maximum angle +/- in degrees (default limits to >= -180 to <= +180 degrees.)
+#define AXIS1_HOME_DEFAULT            90  //   Default Value: 90 (GEM or FORK mounts) or 0 (ALTAZM),  0 to 90 (degrees), 
+                                          //   This is the default home position at startup.  
+                                          // For EQ mounts the value is negated when the site Latitude is < 0 (south.) 
+                                 
 
 // AXIS2 DEC/ALT
 // see https://onstep.groups.io/g/main/wiki/6-Configuration#AXIS2
@@ -151,11 +156,14 @@
 #define AXIS2_DRIVER_IGOTO            2000 //    OFF, n, (mA.) Current during slews. OFF uses same as IRUN.                    Option
 #define AXIS2_DRIVER_POWER_DOWN       ON //    OFF, ON Powers off 10sec after movement stops or 10min after last<=1x guide.  Option
 #define AXIS2_DRIVER_REVERSE          ON //    OFF, ON Reverses movement direction, or reverse wiring instead to correct.   <-Often
-#define AXIS2_DRIVER_STATUS           ON // TMC_SPI //    OFF, ON Enables polling for driver status info/fault detection.               Option
+#define AXIS2_DRIVER_STATUS           TMC_SPI // TMC_SPI //    OFF, ON Enables polling for driver status info/fault detection.               Option
 #define AXIS2_TANGENT_ARM             OFF //    OFF, ON +limit range below. Set cntr w/[Reset Home] Return cntr w/[Find Home] Infreq
 
 #define AXIS2_LIMIT_MIN               -90 //    -90, n. Where n=-90..0 (degrees.) Minimum allowed declination.                Infreq
 #define AXIS2_LIMIT_MAX               90 //     90, n. Where n=0..90 (degrees.) Maximum allowed declination.                 Infreq
+
+#define AXIS2_HOME_DEFAULT            90  //   Default Value: 90 (GEM or FORK mounts) or 0 (ALTAZM),  0 to 180 (degrees), 
+                                          //   This is the default home position at startup. 
 
 // AXIS3 ROTATOR
 // see https://onstep.groups.io/g/main/wiki/6-Configuration#AXIS3
